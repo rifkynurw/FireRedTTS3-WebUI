@@ -1,0 +1,16 @@
+:root {
+  --rb-accent: #7c5cff;
+  --rb-accent-2: #20c997;
+  --rb-bg: #0b0d12;
+  --rb-panel: rgba(255,255,255,.045);
+  --rb-border: rgba(255,255,255,.10);
+}
+.gradio-container { max-width: 1180px !important; background: radial-gradient(circle at 15% 0%, rgba(124,92,255,.16), transparent 32%), radial-gradient(circle at 85% 15%, rgba(32,201,151,.10), transparent 28%), var(--rb-bg) !important; }
+.hero { padding: 28px 30px; border: 1px solid var(--rb-border); border-radius: 24px; background: linear-gradient(135deg, rgba(124,92,255,.16), rgba(32,201,151,.06)); box-shadow: 0 18px 50px rgba(0,0,0,.22); margin-bottom: 18px; }
+.brand { font-size: 14px; letter-spacing: .18em; text-transform: uppercase; opacity: .75; }
+.title { font-size: 40px; line-height: 1.05; font-weight: 800; margin: 8px 0 8px; }
+.subtitle { font-size: 16px; opacity: .78; }
+.credit { margin-top: 14px; font-size: 13px; opacity: .62; }
+.section { border: 1px solid var(--rb-border); border-radius: 20px; padding: 8px; background: var(--rb-panel); }
+.badge { display:inline-block; padding:5px 10px; border-radius:999px; font-size:12px; background:rgba(32,201,151,.12); border:1px solid rgba(32,201,151,.25); color:#9ff3d5; }
+.generate-btn { min-height: 54px !important; border-radius: 14px !important; font-weight: 700 !important; }
