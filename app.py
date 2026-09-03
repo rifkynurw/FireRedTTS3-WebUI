@@ -330,7 +330,7 @@ with gr.Blocks(title="FireRed Studio — Rifky Wijayanto", css=css, theme=gr.the
             reference_transcript = gr.Textbox(
                 label="Reference Transcript",
                 lines=5,
-                placeholder="Masukkan PERSIS ucapan pada reference audio.",
+                placeholder="RIFKY.WIJAYANTO - Masukkan PERSIS ucapan pada reference audio.",
             )
 
     gr.Markdown("### 2 · Write your script", elem_classes=["section"])
