@@ -171,11 +171,11 @@ with gr.Blocks(title="Cangkeman — Ruang Kerja Suara", css=css, theme=gr.themes
 
 demo.queue(max_size=4, default_concurrency_limit=1)
 
-# Fix14: do not create a Gradio public share tunnel here. The notebook owns public access.
+# Fix18: public Gradio share is intentional so browser upload/file endpoints stay on the same public origin; model loading remains lazy in notebook backend.
 launch_result = demo.launch(
     server_name="0.0.0.0",
     server_port=PORT,
-    share=False,
+    share=True,
     show_error=True,
     prevent_thread_lock=True,
     allowed_paths=[str(OUTPUT_DIR)],
