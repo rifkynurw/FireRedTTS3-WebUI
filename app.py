@@ -249,182 +249,177 @@ def handle_preset_change(preset_name):
     return 1.0, 0.0
 
 with gr.Blocks(title="CANGKEMANMU", css=css, theme=gr.themes.Default()) as demo:
-    
+
     # State tersembunyi untuk input seed yang diwajibkan oleh backend
     hidden_seed = gr.Number(value=DEFAULT_SEED, visible=False)
 
     with gr.Row(elem_classes="app-container"):
-        
-        # ==========================================
-        # LEFT SIDEBAR (Navigasi)
-        # ==========================================
+        # Sidebar: hanya elemen navigasi yang sudah ada di project.
         with gr.Column(elem_classes="sidebar"):
             gr.HTML("""
             <div class="brand">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #ef4444;"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-                <span>CANGKEMANMU</span>
+                <span class="brand-mark" aria-hidden="true">II</span>
+                <span class="brand-name">Cangkemanmu</span>
             </div>
-            
+
             <div class="nav-section">
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    Home
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-5h5v5"/></svg>
+                    <span>Home</span>
                 </a>
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Voices
-                    <span class="plus-icon">+</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><circle cx="8" cy="16" r="2.5"/><circle cx="16" cy="16" r="2.5"/></svg>
+                    <span>Voices</span><span class="plus-icon">+</span>
                 </a>
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                    Templat
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 5.5h10l4 4V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z"/><path d="M15 5.5V10h4"/><path d="M8 14h8M8 17h5"/></svg>
+                    <span>Studio Suara</span>
                 </a>
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                    Aset
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m6 6 12 6-12 6V6Z"/><path d="M12 3v18" opacity="0"/></svg>
+                    <span>Templat</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 7.5h15v11h-15z"/><path d="M7 7.5V5h10v2.5"/></svg>
+                    <span>Aset</span>
                 </a>
             </div>
 
             <div class="nav-section-title">Pintasan</div>
             <div class="nav-section">
                 <a href="#" class="nav-item active">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-                    Studio Suara
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12h3l2-5 3 10 2-5h6"/></svg>
+                    <span>Kloning Suara</span>
                 </a>
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    Kloning Suara
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    Pengaturan Lanjutan
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 2-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.8v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2-2 .1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5v-2.8h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-2 .1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h2.8v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2 2-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+                    <span>Pengaturan Lanjutan</span>
                 </a>
             </div>
-            
+
             <div class="sidebar-bottom">
                 <a href="#" class="nav-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    Cangkemanmu
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m20 15-4.5-4.5L7 19"/></svg>
+                    <span>Cangkemanmu</span>
                 </a>
                 <div class="bottom-switch-wrap">
                     <a href="#" class="nav-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
-                        Creative Suite
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12h3l2-5 3 10 2-5h6"/></svg>
+                        <span>Creative Suite</span>
                     </a>
-                    <button class="switch-btn">Switch</button>
+                    <button class="switch-btn" type="button">Switch</button>
                 </div>
             </div>
             """)
 
-        # ==========================================
-        # MAIN CONTENT AREA
-        # ==========================================
         with gr.Column(elem_classes="main-wrapper"):
-            
-            # --- TOP HEADER ---
             gr.HTML("""
             <div class="top-header">
                 <div class="header-title">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #6b7280;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    Voice Studio
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h6"/></svg>
+                    <span>Text to Speech</span>
                 </div>
-                <div class="header-search">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" placeholder="Pencarian..." />
-                </div>
+                <div class="header-spacer"></div>
                 <div class="header-actions">
-                    <button>Feedback</button>
-                    <button>Dokumen</button>
-                    <button>Tanya</button>
-                    <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></button>
-                    <button class="icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+                    <div class="header-search">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+                        <input type="text" placeholder="Pencarian..." aria-label="Pencarian" />
+                        <span class="search-shortcut">⌘&nbsp; K</span>
+                    </div>
+                    <button type="button">Feedback</button>
+                    <button type="button">Docs</button>
+                    <button type="button">Ask</button>
+                    <button class="icon-btn" type="button" aria-label="Folder">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 6.5h6l2 2h9v10a1 1 0 0 1-1 1h-16z"/><path d="M3.5 9h17"/></svg>
+                    </button>
+                    <button class="icon-btn has-dot" type="button" aria-label="Notifikasi">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 5-2 5.5-2 7h16c0-1.5-2-2-2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                    </button>
                     <div class="avatar">h</div>
                 </div>
             </div>
             """)
 
-            # --- WORKSPACE SPLIT (Left Editor / Right Settings) ---
             with gr.Row(elem_classes="workspace-split"):
-                
-                # PANE KIRI (Editor)
                 with gr.Column(elem_classes="pane-left"):
                     target_text = gr.Textbox(
-                        lines=12, 
-                        show_label=False, 
+                        lines=12,
+                        show_label=False,
                         elem_id="target-input",
-                        placeholder="Ketik atau tempel naskah teks target Anda di sini\n(Maksimal 500 karakter)..."
+                        placeholder="Mulai mengetik di sini atau tempel teks apa pun yang ingin diubah menjadi suara alami..."
                     )
-                    
-                    reference_transcript = gr.Textbox(
-                        lines=1, 
-                        show_label=False, 
-                        elem_id="ref-transcript-input",
-                        placeholder="Transkrip Referensi (Ketik persis ucapan pada sampel audio...)"
-                    )
-                    
-                    gr.HTML("<div class='prompt-label'>Coba naskah contoh:</div>")
-                    
-                    with gr.Row(elem_classes="prompt-grid"):
-                        btn_story = gr.Button("📖 Narasi sebuah cerita", elem_classes="prompt-btn")
-                        btn_joke = gr.Button("😀 Ceritakan lelucon lucu", elem_classes="prompt-btn")
-                        btn_ad = gr.Button("🎙️ Rekam iklan", elem_classes="prompt-btn")
-                        btn_lang = gr.Button("🔤 Berbicara dalam berbagai bahasa", elem_classes="prompt-btn")
-                        btn_movie = gr.Button("🎬 Arahkan adegan film dramatis", elem_classes="prompt-btn")
-                        btn_game = gr.Button("🎮 Dengarkan dari karakter video game", elem_classes="prompt-btn")
-                        btn_pod = gr.Button("📻 Perkenalkan podcast Anda", elem_classes="prompt-btn")
-                        btn_med = gr.Button("🧘‍♀️ Pandu kelas meditasi", elem_classes="prompt-btn")
 
-                # PANE KANAN (Pengaturan & Hasil)
+                    reference_transcript = gr.Textbox(
+                        lines=2,
+                        show_label=False,
+                        elem_id="ref-transcript-input",
+                        placeholder="Transkrip referensi — ketik persis ucapan pada sampel audio..."
+                    )
+
+                    gr.HTML("<div class='prompt-label'>Coba naskah contoh</div>")
+                    with gr.Row(elem_classes="prompt-grid"):
+                        btn_story = gr.Button("📖  Narasi sebuah cerita", elem_classes="prompt-btn")
+                        btn_joke = gr.Button("☺  Ceritakan lelucon lucu", elem_classes="prompt-btn")
+                        btn_ad = gr.Button("◉  Rekam iklan", elem_classes="prompt-btn")
+                        btn_lang = gr.Button("文  Berbicara dalam berbagai bahasa", elem_classes="prompt-btn")
+                        btn_movie = gr.Button("▣  Arahkan adegan film dramatis", elem_classes="prompt-btn")
+                        btn_game = gr.Button("◉  Dengarkan dari karakter video game", elem_classes="prompt-btn")
+                        btn_pod = gr.Button("◉  Perkenalkan podcast Anda", elem_classes="prompt-btn")
+                        btn_med = gr.Button("◌  Pandu kelas meditasi", elem_classes="prompt-btn")
+
                 with gr.Column(elem_classes="pane-right"):
                     with gr.Tabs(elem_classes="settings-tabs"):
                         with gr.Tab("Pengaturan", id=1):
-                            
-                            # Banner Promo
                             gr.HTML("""
                             <div class="promo-banner">
-                                <div class="promo-icon">%</div>
+                                <div class="promo-icon">
+                                    <div class="promo-glow"></div>
+                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6"><path d="M6 5v10m0 0c0 2 1.6 3.5 3.5 3.5S13 17 13 15V9c0-1.7 1.3-3 3-3s3 1.3 3 3v6"/><circle cx="6" cy="5" r="1.3" fill="white" stroke="none"/><circle cx="19" cy="15" r="1.3" fill="white" stroke="none"/></svg>
+                                </div>
                                 <div class="promo-text">
                                     <div class="promo-title">Try Flows</div>
                                     <div class="promo-desc">Node-based canvas for creating image, video, speech, music, all in one place.</div>
                                 </div>
-                                <div class="promo-close">✕</div>
+                                <div class="promo-close">×</div>
                             </div>
                             """)
-                            
-                            gr.HTML("<div class='setting-title'>Karakter Suara</div>")
+
+                            gr.HTML("<div class='setting-title'>Voice</div>")
                             voice_preset = gr.Dropdown(
                                 choices=["Preset Alami - Tenang, Jernih", "Dalam & Tenang", "Cepat & Enerjik", "Formal / Narasi"],
                                 value="Preset Alami - Tenang, Jernih",
                                 show_label=False,
                                 elem_classes="custom-dropdown"
                             )
-                            
+
+                            gr.HTML("<div class='setting-title section-gap'>Bahasa</div>")
                             language = gr.Dropdown(
-                                choices=SUPPORTED_LANGUAGES, 
-                                value="Indonesian", 
-                                show_label=False, 
+                                choices=SUPPORTED_LANGUAGES,
+                                value="Indonesian",
+                                show_label=False,
                                 elem_classes="custom-dropdown"
                             )
-                            
+
                             with gr.Row(elem_classes="sliders-row"):
                                 output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan", elem_classes="slim-slider")
-                                pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada (Pitch)", elem_classes="slim-slider")
-                            
+                                pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada", elem_classes="slim-slider")
+
+                            gr.HTML("<div class='setting-title section-gap'>Sampel Suara Referensi</div>")
                             reference_audio = gr.Audio(
-                                sources=["upload", "microphone"], 
-                                type="filepath", 
-                                label="Sampel Suara Referensi (2-20 detik)",
+                                sources=["upload", "microphone"],
+                                type="filepath",
+                                label=None,
                                 elem_classes="custom-audio-uploader"
                             )
-                            
-                            gr.HTML("<div class='setting-title' style='margin-top: 16px;'>Hasil Sintesis</div>")
+
+                            gr.HTML("<div class='setting-title section-gap result-title'>Hasil Sintesis</div>")
                             generated_audio = gr.Audio(show_label=False, autoplay=False, elem_classes="custom-audio-player")
                             saved_path = gr.Textbox(visible=False)
-                            
-                            generate_btn = gr.Button("⚡ Kloning Suara Sekarang", elem_classes="generate-btn")
+
+                            generate_btn = gr.Button("⚡  Kloning Suara Sekarang", elem_classes="generate-btn")
 
                         with gr.Tab("Riwayat", id=2):
-                            gr.HTML("<div style='padding: 20px; color: #6b7280; font-size: 14px;'>Belum ada riwayat kloning suara.</div>")
+                            gr.HTML("<div class='history-empty'>Belum ada riwayat kloning suara.</div>")
 
     # -------------------------------------------------------------
     # EVENT HANDLERS
