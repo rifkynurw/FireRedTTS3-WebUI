@@ -389,6 +389,10 @@ launch_result = demo.launch(
     share=True,
     show_error=True,
     prevent_thread_lock=True,
+    # Allow Gradio to serve files generated in the Google Drive output folder.
+    # Without this, gr.File may reject/move the WAV from outside Gradio's
+    # working/cache directories.
+    allowed_paths=[str(OUTPUT_DIR)],
 )
 
 try:
