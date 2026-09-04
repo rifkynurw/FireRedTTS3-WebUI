@@ -54,7 +54,7 @@ MAX_OUTPUT_SPEED = 1.15
 MIN_PITCH_SEMITONES = -2.0
 MAX_PITCH_SEMITONES = 2.0
 
-# 3 Opsi Teks (Masing-masing ~400 Karakter)
+# 3 Opsi Teks Sampel (Masing-masing ±400 Karakter)
 TEXT_OPTION_1 = (
     "Selamat datang di era baru teknologi penyuaraan digital. Di sini, setiap kata "
     "yang Anda tuliskan mampu diubah menjadi alunan suara yang jernih, alami, dan penuh emosi. "
@@ -297,134 +297,125 @@ APP_DIR = Path(__file__).resolve().parent
 THEME_CSS_FILE = APP_DIR / "theme.css"
 css = THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
-with gr.Blocks(title="CANGKEMANMU — Voice Cloning Studio", css=css, theme=gr.themes.Soft()) as demo:
-    # HEADER BAR
-    gr.HTML("""
-    <header class="studio-nav">
-      <div class="nav-brand">
-        <div class="brand-logo-icon">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <div class="brand-text">
-          <span class="app-title">CANGKEMANMU</span>
-          <span class="app-author">by Rifky Wijayanto</span>
-        </div>
-      </div>
-      <div class="nav-status">
-        <span class="pulse-dot"></span> STUDIO READY
-      </div>
-    </header>
-    """)
-
-    # MAIN WORKSPACE SPLIT (LEFT / RIGHT)
-    with gr.Row(elem_classes=["studio-container"]):
+with gr.Blocks(title="CANGKEMANMU — Voice Studio", css=css, theme=gr.themes.Default()) as demo:
+    
+    # -------------------------------------------------------------
+    # SIDEBAR: BRANDING & PENGATURAN SUARA
+    # -------------------------------------------------------------
+    with gr.Sidebar(open=True, elem_classes=["sidebar-container"]):
         
-        # KOLOM KIRI: SAMPEL SUARA & NASKAH TEKS
-        with gr.Column(scale=6, elem_classes=["column-panel"]):
+        # BRANDING
+        gr.HTML("""
+        <div class="sidebar-brand">
+          <div class="brand-title-wrap">
+            <h1 class="brand-name">CANGKEMANMU</h1>
+            <span class="brand-sub">by Rifky Wijayanto</span>
+          </div>
+          <div class="status-badge">
+            <span class="pulse-dot"></span> Studio Ready
+          </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        """)
+
+        # SECTION 1: AUDIO REFERENSI
+        with gr.Group(elem_classes=["sidebar-section"]):
+            gr.HTML("""
+            <div class="section-title">
+              <span class="section-num">1</span> Sampel Suara Referensi
+            </div>
+            """)
+            reference_audio = gr.Audio(
+                sources=["upload", "microphone"], 
+                type="filepath", 
+                label="Unggah Audio (2 - 20 detik)"
+            )
+            reference_transcript = gr.Textbox(
+                label="Transkrip Suara Referensi", 
+                lines=2, 
+                placeholder="Ketik persis ucapan pada sampel audio..."
+            )
+
+        gr.HTML("<div class='sidebar-divider'></div>")
+
+        # SECTION 2: KONTROL & PRESET VOX
+        with gr.Group(elem_classes=["sidebar-section"]):
+            gr.HTML("""
+            <div class="section-title">
+              <span class="section-num">2</span> Karakter & Pengaturan Suara
+            </div>
+            """)
             
-            # PANEL 1: AUDIO REFERENSI
-            with gr.Group(elem_classes=["panel-card"]):
-              gr.HTML("""
-              <div class="panel-header">
-                <div class="badge-num">1</div>
-                <div>
-                  <h3 class="panel-heading">Sampel Suara Referensi</h3>
-                  <p class="panel-subheading">Unggah sampel vokal bersih durasi 2 - 20 detik</p>
-                </div>
-              </div>
-              """)
-              reference_audio = gr.Audio(sources=["upload","microphone"], type="filepath", label="Berkas Audio Referensi")
-              reference_transcript = gr.Textbox(
-                  label="Transkrip Persis Suara Referensi", 
-                  lines=3, 
-                  placeholder="Ketik persis kata-kata yang diucapkan pada sampel suara di atas..."
-              )
-
-            # PANEL 2: NASKAH TEKS TARGET
-            with gr.Group(elem_classes=["panel-card"]):
-              gr.HTML("""
-              <div class="panel-header">
-                <div class="badge-num">2</div>
-                <div>
-                  <h3 class="panel-heading">Naskah Teks yang Ingin Diucapkan</h3>
-                  <p class="panel-subheading">Pilih opsi teks sampel atau buat naskah Anda sendiri (Maks 500 Karakter)</p>
-                </div>
-              </div>
-              """)
-              
-              target_text = gr.Textbox(
-                  label="", 
-                  lines=6, 
-                  max_lines=10, 
-                  placeholder="Ketik atau pilih naskah teks di bawah ini..."
-              )
-              
-              gr.HTML("<div class='preset-label'>OPSI NASKAH SAMPE " + "L (±400 KARAKTER):</div>")
-              with gr.Row(elem_classes=["sample-btn-group"]):
-                sample_1 = gr.Button("📄 Narasi Storytelling (~400 Karakter)", elem_classes=["sample-btn"])
-                sample_2 = gr.Button("💡 Edukasi & Teknologi (~400 Karakter)", elem_classes=["sample-btn"])
-                sample_3 = gr.Button("💬 Percakapan Santai (~400 Karakter)", elem_classes=["sample-btn"])
-
-              with gr.Row(elem_classes=["sub-controls"]):
-                language = gr.Dropdown(choices=SUPPORTED_LANGUAGES, value="Indonesian", label="Bahasa Suara")
-                seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Variasi")
-                random_button = gr.Button("↻", elem_classes=["icon-btn-refresh"], scale=0)
-
-        # KOLOM KANAN: KONTROL KARAKTER & GENERASI OUTPUT
-        with gr.Column(scale=6, elem_classes=["column-panel"]):
+            language = gr.Dropdown(choices=SUPPORTED_LANGUAGES, value="Indonesian", label="Bahasa Suara")
             
-            # PANEL 3: EXP PRESETS & KONTROL VOX
-            with gr.Group(elem_classes=["panel-card"]):
-              gr.HTML("""
-              <div class="panel-header">
-                <div class="badge-num">3</div>
-                <div>
-                  <h3 class="panel-heading">Pengaturan Karakter Vokal</h3>
-                  <p class="panel-subheading">Kustomisasi gaya, nada, dan kecepatan artikulasi</p>
-                </div>
-              </div>
-              """)
-              
-              gr.HTML("<div class='preset-label'>PRESET KARAKTER SUARA:</div>")
-              with gr.Row(elem_classes=["preset-row"]):
-                preset_nat = gr.Button("Alami", elem_classes=["preset-chip"])
-                preset_deep = gr.Button("Dalam & Tenang", elem_classes=["preset-chip"])
-                preset_fast = gr.Button("Cepat & Enerjik", elem_classes=["preset-chip"])
-                preset_news = gr.Button("Formal / Narasi", elem_classes=["preset-chip"])
-                
-              with gr.Row():
-                output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan Bicara")
-                pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada Suara (Pitch)")
-                
-              reset_button = gr.Button("Atur Ulang Kontrol Suara", elem_classes=["reset-link-btn"])
+            gr.HTML("<div class='field-sublabel'>PRESET KARAKTER</div>")
+            with gr.Row(elem_classes=["preset-grid"]):
+                preset_nat = gr.Button("Alami", elem_classes=["chip-btn"])
+                preset_deep = gr.Button("Dalam", elem_classes=["chip-btn"])
+                preset_fast = gr.Button("Enerjik", elem_classes=["chip-btn"])
+                preset_news = gr.Button("Formal", elem_classes=["chip-btn"])
 
-            # PANEL 4: HASIL GENERASI & PLAYER
-            with gr.Group(elem_classes=["panel-card", "output-highlight"]):
-              gr.HTML("""
-              <div class="panel-header">
-                <div class="badge-num">4</div>
-                <div>
-                  <h3 class="panel-heading">Proses & Hasil Kloning Suara</h3>
-                  <p class="panel-subheading">Klik tombol di bawah untuk menghasilkan audio berkualitas tinggi</p>
-                </div>
-              </div>
-              """)
-              
-              generate_button = gr.Button("Kloning Suara Sekarang  →", variant="primary", elem_classes=["btn-generate-main"])
-              generated_audio = gr.Audio(label="Pemutar Pratinjau Suara", autoplay=False)
-              saved_path = gr.Textbox(label="Lokasi Berkas Audio Master", interactive=False, elem_classes=["file-path-box"])
+            output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan")
+            pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada (Pitch)")
+            
+            with gr.Row(elem_classes=["seed-row"]):
+                seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Variasi", scale=4)
+                random_button = gr.Button("↻", elem_classes=["refresh-btn"], scale=1)
 
-    # FOOTER
-    gr.HTML("""
-    <footer class="studio-footer">
-      <div class="footer-content">
-        <span><b>CANGKEMANMU</b> — Premium Voice Cloning Studio</span>
-        <span>Crafted by <b>Rifky Wijayanto</b></span>
-      </div>
-    </footer>
-    """)
+            reset_button = gr.Button("Atur Ulang Kontrol", elem_classes=["reset-btn"])
 
+    # -------------------------------------------------------------
+    # AREA UTAMA (TENGAH): FOKUS NASKAH TEKS & HASIL GENERATE
+    # -------------------------------------------------------------
+    with gr.Column(elem_classes=["main-workspace"]):
+        
+        # HERO SECTION NASKAH
+        gr.HTML("""
+        <div class="main-header">
+          <h2>Ruang Kerja Naskah Audio</h2>
+          <p>Ketikkan kalimat yang ingin Anda ubah menjadi suara alami atau pilih opsi sampel di bawah.</p>
+        </div>
+        """)
+
+        # PANEL NASKAH TEKS TARGET
+        with gr.Group(elem_classes=["main-card"]):
+            
+            target_text = gr.Textbox(
+                label="NASKAH TEKS TARGET (MAKSIMAL 500 KARAKTER)", 
+                lines=7, 
+                max_lines=12, 
+                placeholder="Ketik atau tempelkan naskah teks Anda di sini..."
+            )
+            
+            gr.HTML("<div class='preset-label'>OPSI NASKAH SAMPE " + "L (±400 KARAKTER):</div>")
+            with gr.Row(elem_classes=["sample-options-row"]):
+                sample_1 = gr.Button("📄 Narasi Storytelling", elem_classes=["sample-card-btn"])
+                sample_2 = gr.Button("💡 Edukasi & Teknologi", elem_classes=["sample-card-btn"])
+                sample_3 = gr.Button("💬 Percakapan Santai", elem_classes=["sample-card-btn"])
+
+            generate_button = gr.Button("⚡ Kloning Suara Sekarang", variant="primary", elem_classes=["btn-generate-hero"])
+
+        # PANEL OUTPUT HASIL AUDIO
+        with gr.Group(elem_classes=["main-card", "output-card"]):
+            gr.HTML("""
+            <div class="output-header">
+              <h3>Hasil Sintesis Suara</h3>
+            </div>
+            """)
+            generated_audio = gr.Audio(label="Pemutar Audio Output", autoplay=False)
+            saved_path = gr.Textbox(label="Lokasi Berkas Audio Master", interactive=False, elem_classes=["file-path-box"])
+
+        # FOOTER HALUS
+        gr.HTML("""
+        <div class="main-footer">
+          <span><b>CANGKEMANMU</b> — Studio Kloning Suara Professional</span>
+          <span>Dikembangkan oleh <b>Rifky Wijayanto</b></span>
+        </div>
+        """)
+
+    # -------------------------------------------------------------
     # EVENT HANDLERS
+    # -------------------------------------------------------------
     sample_1.click(lambda: TEXT_OPTION_1, outputs=[target_text])
     sample_2.click(lambda: TEXT_OPTION_2, outputs=[target_text])
     sample_3.click(lambda: TEXT_OPTION_3, outputs=[target_text])

@@ -1,17 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg-color: #FAFAFA;
+  --bg-main: #FFFFFF;
+  --bg-sidebar: #F8FAFC;
   --card-bg: #FFFFFF;
-  --border-color: #E4E4E7;
-  --border-hover: #D4D4D8;
-  --text-main: #09090B;
-  --text-muted: #71717A;
-  --accent-black: #09090B;
-  --accent-hover: #27272A;
-  --green-active: #10B981;
-  --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-hover: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+  --border-color: #E2E8F0;
+  --border-focus: #0F172A;
+  
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+  --accent-primary: #0F172A;
+  --accent-hover: #1E293B;
+  --green-online: #10B981;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
 }
 
 * {
@@ -20,254 +23,157 @@
 }
 
 body, .gradio-container {
-  background-color: var(--bg-color) !important;
-  color: var(--text-main) !important;
+  background-color: var(--bg-main) !important;
+  color: var(--text-dark) !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
 .gradio-container {
-  max-width: 1360px !important;
-  min-height: 100vh;
-  padding: 0 24px 32px !important;
+  max-width: 1440px !important;
+  margin: 0 auto !important;
 }
 
 footer {
   display: none !important;
 }
 
-/* HEADER ELEGAN */
-.studio-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 8px;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 28px;
-  background: transparent;
+/* ==========================================
+   SIDEBAR DESAIN (PENGATURAN & BRANDING)
+   ========================================== */
+.sidebar-container {
+  background-color: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border-color) !important;
+  padding: 24px 18px !important;
 }
 
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.sidebar-brand {
+  margin-bottom: 20px;
 }
 
-.brand-logo-icon {
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 20px;
+.brand-name {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-dark) !important;
+  margin: 0 !important;
+  line-height: 1.1 !important;
 }
 
-.brand-logo-icon span {
-  width: 3.5px;
-  background-color: var(--accent-black);
-  border-radius: 2px;
-}
-
-.brand-logo-icon span:nth-child(1) { height: 10px; }
-.brand-logo-icon span:nth-child(2) { height: 20px; }
-.brand-logo-icon span:nth-child(3) { height: 14px; }
-.brand-logo-icon span:nth-child(4) { height: 8px; }
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.app-title {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-main);
-  line-height: 1.1;
-}
-
-.app-author {
+.brand-sub {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
 }
 
-.nav-status {
-  display: flex;
+.status-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--text-muted);
-  letter-spacing: 0.05em;
-  background: #F4F4F5;
-  padding: 6px 12px;
-  border-radius: 20px;
+  background: #FFFFFF;
   border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-top: 12px;
 }
 
 .pulse-dot {
-  width: 7px;
-  height: 7px;
-  background-color: var(--green-active);
+  width: 6px;
+  height: 6px;
+  background-color: var(--green-online);
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
-/* WORKSPACE GRID */
-.studio-container {
-  gap: 24px !important;
+.sidebar-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 20px 0;
 }
 
-.column-panel {
+.sidebar-section {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.section-title {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 14px;
 }
 
-.panel-card {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 16px !important;
-  padding: 24px !important;
-  box-shadow: var(--shadow-subtle) !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.panel-card:hover {
-  border-color: var(--border-hover) !important;
-  box-shadow: var(--shadow-hover) !important;
-}
-
-.panel-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.badge-num {
-  width: 26px;
-  height: 26px;
-  background-color: #F4F4F5;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+.section-num {
+  width: 20px;
+  height: 20px;
+  background-color: var(--accent-primary);
+  color: #FFFFFF;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'JetBrains Mono', monospace !important;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-  flex-shrink: 0;
+  font-size: 11px;
 }
 
-.panel-heading {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-main);
-  margin: 0;
-  line-height: 1.2;
-}
-
-.panel-subheading {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin: 4px 0 0 0;
-}
-
-/* NASKAH & PRESET LABELS */
-.preset-label {
+.field-sublabel {
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
-  letter-spacing: 0.05em;
-  margin: 16px 0 8px;
+  margin: 12px 0 6px;
 }
 
-.sample-btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px !important;
-}
-
-.sample-btn {
-  background: #FAFAFA !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-main) !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  text-align: left !important;
-  padding: 10px 14px !important;
-  border-radius: 10px !important;
-  transition: all 0.15s ease !important;
-}
-
-.sample-btn:hover {
-  background: #F4F4F5 !important;
-  border-color: var(--border-hover) !important;
-}
-
-/* PRESETS & SLIDERS */
-.preset-row {
+.preset-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px !important;
+  gap: 6px !important;
   margin-bottom: 12px;
 }
 
-.preset-chip {
-  background: #FAFAFA !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-main) !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  border-radius: 10px !important;
-  padding: 8px 12px !important;
-}
-
-.preset-chip:hover {
-  background: #F4F4F5 !important;
-  border-color: var(--border-hover) !important;
-}
-
-/* INPUTS & FORM ELEMENTS */
-input, textarea, .gradio-dropdown, .gradio-audio {
-  background: #FAFAFA !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 10px !important;
-  color: var(--text-main) !important;
-}
-
-textarea:focus, input:focus {
+.chip-btn {
   background: #FFFFFF !important;
-  border-color: var(--accent-black) !important;
-  box-shadow: 0 0 0 2px rgba(9, 9, 11, 0.05) !important;
-}
-
-label span {
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-dark) !important;
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: var(--text-muted) !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 6px 8px !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
 }
 
-.sub-controls {
-  gap: 12px !important;
-  margin-top: 12px;
+.chip-btn:hover {
+  border-color: var(--accent-primary) !important;
+  background: #F1F5F9 !important;
 }
 
-.icon-btn-refresh {
-  min-width: 42px !important;
-  background: #FAFAFA !important;
+.seed-row {
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+
+.refresh-btn {
+  min-width: 38px !important;
+  height: 42px !important;
+  background: #FFFFFF !important;
   border: 1px solid var(--border-color) !important;
-  border-radius: 10px !important;
-  font-size: 16px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
 }
 
-.reset-link-btn {
+.reset-btn {
   background: transparent !important;
   border: none !important;
   color: var(--text-muted) !important;
@@ -277,58 +183,148 @@ label span {
   cursor: pointer;
 }
 
-/* GENERATE BUTTON & OUTPUT */
-.output-highlight {
-  background: #FAFAFA !important;
+/* ==========================================
+   AREA UTAMA (TENGAH - NASKAH & OUTPUT)
+   ========================================== */
+.main-workspace {
+  padding: 32px 40px !important;
+  max-width: 900px !important;
+  margin: 0 auto !important;
 }
 
-.btn-generate-main {
-  background: var(--accent-black) !important;
+.main-header {
+  margin-bottom: 24px;
+}
+
+.main-header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 6px 0;
+}
+
+.main-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.main-card {
+  background: var(--card-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  padding: 28px !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-bottom: 24px !important;
+}
+
+.preset-label {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 20px 0 10px;
+}
+
+.sample-options-row {
+  gap: 10px !important;
+  margin-bottom: 24px;
+}
+
+.sample-card-btn {
+  background: #F8FAFC !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-dark) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  text-align: left !important;
+  transition: all 0.15s ease !important;
+}
+
+.sample-card-btn:hover {
+  background: #F1F5F9 !important;
+  border-color: var(--accent-primary) !important;
+}
+
+.btn-generate-hero {
+  background: var(--accent-primary) !important;
   color: #FFFFFF !important;
   border: none !important;
   border-radius: 12px !important;
-  padding: 14px 20px !important;
-  font-size: 14px !important;
-  font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  padding: 16px 24px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  width: 100% !important;
+  box-shadow: var(--shadow-md) !important;
   transition: all 0.2s ease !important;
-  margin-bottom: 16px;
+  cursor: pointer;
 }
 
-.btn-generate-main:hover {
+.btn-generate-hero:hover {
   background: var(--accent-hover) !important;
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.output-card {
+  background: #FAFBFD !important;
+  border-color: #CBD5E1 !important;
+}
+
+.output-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 16px 0;
 }
 
 .file-path-box input {
   font-family: 'JetBrains Mono', monospace !important;
   font-size: 11px !important;
+  background: #FFFFFF !important;
 }
 
-/* FOOTER */
-.studio-footer {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+/* INPUT COMPONENT STYLING */
+input, textarea, .gradio-dropdown, .gradio-audio {
+  background: #FFFFFF !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 10px !important;
+  color: var(--text-dark) !important;
 }
 
-.footer-content {
+textarea:focus, input:focus {
+  border-color: var(--border-focus) !important;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.05) !important;
+}
+
+label span {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--text-muted) !important;
+  letter-spacing: 0.04em;
+}
+
+/* FOOTER HALUS */
+.main-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
   color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  padding-top: 20px;
+  margin-top: 32px;
 }
 
-@media (max-width: 900px) {
-  .studio-container {
+@media (max-width: 800px) {
+  .sample-options-row {
     flex-direction: column !important;
   }
-  .preset-row {
-    grid-template-columns: 1fr;
+  .main-workspace {
+    padding: 20px !important;
   }
-  .footer-content {
+  .main-footer {
     flex-direction: column;
     gap: 8px;
     align-items: flex-start;
