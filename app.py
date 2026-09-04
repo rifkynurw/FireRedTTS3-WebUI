@@ -208,6 +208,25 @@ def set_voice_preset(preset_type):
         return 0.98, -0.5
     return 1.0, 0.0
 
+def describe_reference_audio(path):
+    if not path:
+        return "Upload a reference clip to begin."
+    try:
+        _, duration, sr = validate_reference_audio(path)
+    except gr.Error as e:
+        return str(e)
+    except Exception as e:
+        return f"Could not read this file: {e}"
+    return f"{duration:.1f}s captured at {sr:,} Hz — ready to clone."
+
+def describe_char_count(text):
+    n = len(text or "")
+    if n == 0:
+        return f"Up to {MAX_TARGET_CHARS} characters."
+    if n > MAX_TARGET_CHARS:
+        return f"{n} characters — {n - MAX_TARGET_CHARS} over the limit."
+    return f"{n} of {MAX_TARGET_CHARS} characters."
+
 def generate_voice(
     target_text,
     reference_transcript,
@@ -218,6 +237,7 @@ def generate_voice(
     pitch_semitones,
 ):
     try:
+        t0 = time.time()
         target_text = (target_text or "").strip()
         reference_transcript = (reference_transcript or "").strip()
         if not target_text:
@@ -272,7 +292,14 @@ def generate_voice(
         pcm16_path = out_path.with_name(out_path.stem + "_PCM16.wav")
         sf.write(str(master_path), processed, int(gen_audio_sr), subtype="FLOAT")
         sf.write(str(pcm16_path), processed, int(gen_audio_sr), subtype="PCM_16")
-        return (int(gen_audio_sr), processed), str(master_path)
+
+        elapsed = time.time() - t0
+        duration_out = processed.shape[-1] / float(gen_audio_sr)
+        summary = (
+            f"**{duration_out:.1f}s** of audio at **{int(gen_audio_sr):,} Hz**, rendered in {elapsed:.1f}s.\n\n"
+            f"{language} · seed {seed} · speed {speed:.2f}x · pitch {pitch:+.1f}st"
+        )
+        return (int(gen_audio_sr), processed), summary, [str(master_path), str(pcm16_path)]
 
     except gr.Error:
         raise
@@ -288,49 +315,54 @@ APP_DIR = Path(__file__).resolve().parent
 THEME_CSS_FILE = APP_DIR / "theme.css"
 css = THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
-with gr.Blocks(title="FireRed Studio — Neural Voice Lab", css=css, theme=gr.themes.Soft()) as demo:
-    gr.HTML("""<div class="topbar"><div class="brand-lockup"><div class="brand-mark"><span></span><span></span><span></span></div><div><div class="brand-name">FIRERED</div><div class="brand-product">NEURAL VOICE LAB</div></div></div><div class="topbar-status"><span class="status-dot"></span> SYSTEM ONLINE <b>•</b> T4 GPU</div></div>""")
-    gr.HTML("""<section class="hero-v2"><div class="hero-grid"></div><div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> AI VOICE WORKSPACE</div><h1>Give words a <em>voice.</em></h1><p>Clone a voice, shape its character, and turn your script into expressive speech — all from one focused studio.</p><div class="hero-metrics"><span><b>24+</b> languages</span><i></i><span><b>24 kHz</b> output</span><i></i><span><b>HQ</b> DSP engine</span></div></div><div class="hero-visual"><div class="voice-orb"><div class="orb-core"></div></div><div class="wave-stack"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="orb-caption">VOICE SYNTHESIS<br><b>READY</b></div></div></section>""")
+with gr.Blocks(title="FireRed Studio — Voice Workspace", css=css, theme=gr.themes.Soft()) as demo:
+    gr.HTML("""<div class="topbar"><div class="brand-lockup"><div class="brand-mark"><span></span><span></span><span></span></div><div><div class="brand-name">FireRed</div><div class="brand-product">Voice Studio</div></div></div><div class="topbar-status"><span class="status-dot"></span>Model loaded, ready to render</div></div>""")
+    gr.HTML("""<section class="hero"><div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span>Voice workspace</div><h1>Give words a <span class="accent">voice.</span></h1><p>Clone a voice from a short clip, shape its character, and turn a script into speech that sounds like someone speaking it — in over twenty languages, mastered at 24kHz.</p></div><div class="hero-visual"><div class="hero-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div></section>""")
     with gr.Row(elem_classes=["workspace"]):
         with gr.Column(scale=7):
-            with gr.Group(elem_classes=["glass-panel","step-panel"]):
-                gr.HTML("""<div class="panel-head"><div class="step-icon">01</div><div><div class="panel-kicker">VOICE SOURCE</div><div class="panel-title">Capture the voice</div></div><div class="panel-check">● READY</div></div>""")
+            with gr.Group(elem_classes=["panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-index">1</div><div><div class="panel-kicker">Voice source</div><div class="panel-title">Capture the voice</div></div></div>""")
                 with gr.Row():
-                    reference_audio=gr.Audio(sources=["upload","microphone"],type="filepath",label="Reference audio · 2–20 sec")
+                    reference_audio=gr.Audio(sources=["upload","microphone"],type="filepath",label=f"Reference audio · {MIN_PROMPT_SECONDS:.0f}–{MAX_PROMPT_SECONDS:.0f} sec")
                     reference_transcript=gr.Textbox(label="Exact transcript",lines=5,placeholder="Type exactly what is spoken in your reference audio…")
-            with gr.Group(elem_classes=["glass-panel","step-panel"]):
-                gr.HTML("""<div class="panel-head"><div class="step-icon">02</div><div><div class="panel-kicker">SCRIPT</div><div class="panel-title">Write what you want to hear</div></div><div class="char-pill">MAX 500</div></div>""")
+                ref_status=gr.Markdown("Upload a reference clip to begin.",elem_classes=["field-hint"])
+            with gr.Group(elem_classes=["panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-index">2</div><div><div class="panel-kicker">Script</div><div class="panel-title">Write what you want to hear</div></div></div>""")
                 target_text=gr.Textbox(label="",lines=5,max_lines=8,placeholder="Start writing your script… Make it conversational, cinematic, or completely yours.")
-                gr.Markdown("<div class='micro-label'>QUICK SCRIPTS</div>")
+                char_counter=gr.Markdown(f"Up to {MAX_TARGET_CHARS} characters.",elem_classes=["field-hint"])
+                gr.Markdown("<div class='micro-label'>Quick scripts</div>")
                 with gr.Row():
-                    sample_1=gr.Button("✦  Welcome",elem_classes=["chip-btn"]); sample_2=gr.Button("◈  Tech News",elem_classes=["chip-btn"]); sample_3=gr.Button("○  Casual",elem_classes=["chip-btn"])
+                    sample_1=gr.Button("Welcome",elem_classes=["chip"]); sample_2=gr.Button("Tech news",elem_classes=["chip"]); sample_3=gr.Button("Casual",elem_classes=["chip"])
                 with gr.Row(elem_classes=["compact-row"]):
                     language=gr.Dropdown(choices=SUPPORTED_LANGUAGES,value="Indonesian",label="Language")
                     seed=gr.Number(value=DEFAULT_SEED,precision=0,label="Seed")
                     random_button=gr.Button("↻",elem_classes=["icon-btn"],scale=0)
-            with gr.Group(elem_classes=["glass-panel","step-panel"]):
-                gr.HTML("""<div class="panel-head"><div class="step-icon">03</div><div><div class="panel-kicker">VOICE DESIGN</div><div class="panel-title">Shape the performance</div></div><div class="panel-check">DSP · HQ</div></div>""")
-                gr.Markdown("<div class='micro-label'>CHARACTER PRESETS</div>")
+            with gr.Group(elem_classes=["panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-index">3</div><div><div class="panel-kicker">Voice design</div><div class="panel-title">Shape the performance</div></div></div>""")
+                gr.Markdown("<div class='micro-label'>Character presets</div>")
                 with gr.Row():
-                    preset_nat=gr.Button("Natural",elem_classes=["preset-btn"]); preset_deep=gr.Button("Deep & Calm",elem_classes=["preset-btn"]); preset_fast=gr.Button("Upbeat",elem_classes=["preset-btn"]); preset_news=gr.Button("News",elem_classes=["preset-btn"])
+                    preset_nat=gr.Button("Natural",elem_classes=["preset"]); preset_deep=gr.Button("Deep & calm",elem_classes=["preset"]); preset_fast=gr.Button("Upbeat",elem_classes=["preset"]); preset_news=gr.Button("News",elem_classes=["preset"])
                 with gr.Row():
                     output_speed=gr.Slider(minimum=MIN_OUTPUT_SPEED,maximum=MAX_OUTPUT_SPEED,value=1.0,step=0.01,label="Speed")
                     pitch_semitones=gr.Slider(minimum=MIN_PITCH_SEMITONES,maximum=MAX_PITCH_SEMITONES,value=0.0,step=0.5,label="Pitch")
-                reset_button=gr.Button("Reset voice controls",elem_classes=["ghost-btn"])
+                reset_button=gr.Button("Reset voice controls",elem_classes=["ghost-link"])
         with gr.Column(scale=5,elem_classes=["output-column"]):
-            with gr.Group(elem_classes=["output-card"]):
-                gr.HTML("""<div class="output-top"><div><div class="panel-kicker">04 · OUTPUT</div><div class="output-title">Your voice, rendered.</div></div><div class="render-badge"><span></span> HQ RENDER</div></div><div class="render-visual"><div class="render-glow"></div><div class="render-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="render-center">24<span>kHz</span></div></div>""")
-                generate_button=gr.Button("Generate voice  →",variant="primary",elem_classes=["generate-btn"])
+            with gr.Group(elem_classes=["output-panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-index">4</div><div><div class="panel-kicker">Output</div><div class="output-title">Your voice, rendered</div></div></div>""")
+                generate_button=gr.Button("Generate voice",variant="primary",elem_classes=["generate-btn"])
                 generated_audio=gr.Audio(label="Preview",autoplay=False)
-                saved_path=gr.Textbox(label="Master file",interactive=False,elem_classes=["file-output"])
-                gr.HTML("""<div class="output-note"><span>⚡</span> FireRedTTS3 + Rubber Band R3 HQ <span class="note-right">FLOAT32 MASTER</span></div>""")
-    gr.HTML("""<div class="footer-line"><span>FIRERED STUDIO</span><span>·</span><span>PRIVATE VOICE WORKSPACE</span><span class="footer-right">v3 · NEURAL AUDIO</span></div>""")
+                generation_summary=gr.Markdown("Nothing rendered yet — fill in the steps above, then generate.",elem_classes=["summary-box"])
+                output_files=gr.File(label="Download",file_count="multiple",elem_classes=["file-output"])
+                gr.HTML("""<div class="output-note">Rendered with FireRedTTS3, mastered with Rubber Band R3 HQ. Two files: a float32 master and a standard PCM16 copy.</div>""")
+    gr.HTML("""<div class="footer">FireRed Studio — a private voice workspace</div>""")
     sample_1.click(lambda:"Selamat datang di FireRed Studio. Suara ini dikloning secara presisi menggunakan teknologi AI terbaru.",outputs=[target_text])
     sample_2.click(lambda:"Perkembangan kecerdasan buatan dalam pemrosesan audio kini memungkinkan pembacaan teks dengan artikulasi yang sangat alami.",outputs=[target_text])
     sample_3.click(lambda:"Halo semuanya! Semoga hari kalian menyenangkan dan proyek audio kalian berjalan dengan lancar ya.",outputs=[target_text])
     preset_nat.click(lambda:set_voice_preset("Natural"),outputs=[output_speed,pitch_semitones]); preset_deep.click(lambda:set_voice_preset("Deep & Calm"),outputs=[output_speed,pitch_semitones]); preset_fast.click(lambda:set_voice_preset("Upbeat / Fast"),outputs=[output_speed,pitch_semitones]); preset_news.click(lambda:set_voice_preset("News Broadcaster"),outputs=[output_speed,pitch_semitones])
     reset_button.click(reset_controls,inputs=[],outputs=[output_speed,pitch_semitones]); random_button.click(random_seed,inputs=[],outputs=[seed])
-    generate_button.click(generate_voice,inputs=[target_text,reference_transcript,reference_audio,language,seed,output_speed,pitch_semitones],outputs=[generated_audio,saved_path])
+    reference_audio.change(describe_reference_audio,inputs=[reference_audio],outputs=[ref_status])
+    target_text.change(describe_char_count,inputs=[target_text],outputs=[char_counter])
+    generate_button.click(generate_voice,inputs=[target_text,reference_transcript,reference_audio,language,seed,output_speed,pitch_semitones],outputs=[generated_audio,generation_summary,output_files])
 
 demo.queue(max_size=4, default_concurrency_limit=1)
 
