@@ -54,11 +54,6 @@ MAX_OUTPUT_SPEED = 1.15
 MIN_PITCH_SEMITONES = -2.0
 MAX_PITCH_SEMITONES = 2.0
 
-# Opsi Teks Sampel
-TEXT_OPTION_1 = "Selamat datang di era baru teknologi penyuaraan digital. Di sini, setiap kata yang Anda tuliskan mampu diubah menjadi alunan suara yang jernih, alami, dan penuh emosi. Teknologi ini dirancang untuk membantu para kreator konten, penulis, serta profesional dalam menghidupkan narasi mereka secara presisi. Mulailah mengekspresikan ide-ide terbaik Anda dengan kualitas audio berstandar studio tinggi sekarang juga."
-TEXT_OPTION_2 = "Perkembangan teknologi audio saat ini memungkinkan proses kloning suara dilakukan dengan sangat cepat dan akurat. Anda tidak perlu lagi melakukan rekaman ulang berulang kali untuk mendapatkan hasil penyampaian yang sempurna. Cukup masukkan teks serta contoh sampel suara referensi, lalu biarkan sistem bekerja menghasilkan artikulasi yang alami, intonasi yang pas, serta kualitas suara yang sangat jernih."
-TEXT_OPTION_3 = "Halo semuanya! Selamat datang kembali di ruang kreatif kita. Hari ini saya mau berbagi cerita menarik tentang bagaimana ide-ide kecil bisa diubah menjadi karya besar dengan bantuan alat audio yang tepat. Jangan lupa untuk terus mengeksplorasi potensi diri Anda, mencoba hal-hal baru, dan menciptakan konten yang menginspirasi banyak orang. Terima kasih sudah mendengarkan dan semoga hari Anda selalu menyenangkan!"
-
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed % (2**32 - 1))
@@ -69,23 +64,29 @@ def set_seed(seed):
 
 def validate_reference_audio(path):
     if not path:
-        raise gr.Error("Audio referensi belum dipilih.")
+        raise gr.Error("Reference audio belum dipilih.")
     p = Path(path)
     if not p.is_file():
-        raise gr.Error("Audio referensi tidak ditemukan.")
+        raise gr.Error("Reference audio tidak ditemukan.")
     if p.stat().st_size <= 0:
-        raise gr.Error("Audio referensi kosong.")
+        raise gr.Error("Reference audio kosong.")
     try:
         info = sf.info(str(p))
     except Exception as e:
-        raise gr.Error(f"Audio referensi tidak dapat dibaca: {e}")
+        raise gr.Error(f"Reference audio tidak dapat dibaca: {e}")
     if info.frames <= 0 or info.samplerate <= 0:
-        raise gr.Error("Metadata audio referensi tidak valid.")
+        raise gr.Error("Metadata reference audio tidak valid.")
     duration = info.frames / float(info.samplerate)
     if duration < MIN_PROMPT_SECONDS:
-        raise gr.Error(f"Audio referensi terlalu pendek ({duration:.2f}s). Gunakan minimal {MIN_PROMPT_SECONDS:.1f}s.")
+        raise gr.Error(
+            f"Reference audio terlalu pendek ({duration:.2f}s). "
+            f"Gunakan minimal {MIN_PROMPT_SECONDS:.1f}s."
+        )
     if duration > MAX_PROMPT_SECONDS:
-        raise gr.Error(f"Audio referensi terlalu panjang ({duration:.2f}s). Gunakan <= {MAX_PROMPT_SECONDS:.0f}s.")
+        raise gr.Error(
+            f"Reference audio terlalu panjang ({duration:.2f}s). "
+            f"Gunakan <= {MAX_PROMPT_SECONDS:.0f}s."
+        )
     return str(p), duration, int(info.samplerate)
 
 def prepare_reference_audio(path):
@@ -93,16 +94,16 @@ def prepare_reference_audio(path):
     try:
         waveform, loaded_sr = torchaudio.load(path)
     except Exception as e:
-        raise gr.Error(f"Audio referensi gagal dimuat: {e}")
+        raise gr.Error(f"Reference audio gagal dimuat: {e}")
     waveform = waveform.float()
     if waveform.ndim == 1:
         waveform = waveform.unsqueeze(0)
     if waveform.ndim != 2 or waveform.shape[-1] <= 0:
-        raise gr.Error(f"Waveform referensi tidak valid: {tuple(waveform.shape)}")
+        raise gr.Error(f"Waveform reference tidak valid: {tuple(waveform.shape)}")
     if waveform.shape[0] > 1:
         waveform = waveform.mean(dim=0, keepdim=True)
     if not torch.isfinite(waveform).all():
-        raise gr.Error("Audio referensi mengandung nilai tidak valid.")
+        raise gr.Error("Reference audio mengandung NaN/Inf.")
     return waveform.cpu(), int(loaded_sr), duration
 
 def validate_generated_audio(audio):
@@ -112,12 +113,12 @@ def validate_generated_audio(audio):
     if audio.ndim == 1:
         audio = audio.unsqueeze(0)
     if audio.ndim != 2 or audio.shape[-1] <= 0:
-        raise RuntimeError(f"Ukuran audio tidak valid: {tuple(audio.shape)}")
+        raise RuntimeError(f"Unexpected generated audio shape: {tuple(audio.shape)}")
     if not torch.isfinite(audio).all():
-        raise gr.Error("Audio sintesis mengandung nilai tidak valid.")
+        raise gr.Error("Generated audio mengandung NaN/Inf; tidak disimpan.")
     peak = float(audio.abs().max().item())
     if not math.isfinite(peak) or peak <= 0:
-        raise gr.Error("Audio sintesis kosong.")
+        raise gr.Error("Generated audio kosong/tidak valid.")
     if peak > 1.0:
         audio = audio / peak * 0.999
     return audio
@@ -131,30 +132,37 @@ def _run_rubberband_hq(speed, pitch, input_path, output_path, sr):
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
     if result.returncode != 0:
-        raise gr.Error("Proses penyelarasan nada & kecepatan audio gagal.")
+        raise gr.Error(
+            "Rubber Band R3 HQ gagal.\n"
+            f"returncode={result.returncode}\n"
+            f"STDOUT:\n{result.stdout[-6000:]}\n"
+            f"STDERR:\n{result.stderr[-6000:]}"
+        )
     return result
 
 def apply_voice_controls(audio_tensor, sr, speed, pitch):
     speed = float(speed)
     pitch = float(pitch)
     if not MIN_OUTPUT_SPEED <= speed <= MAX_OUTPUT_SPEED:
-        raise gr.Error(f"Kecepatan harus {MIN_OUTPUT_SPEED:.2f}–{MAX_OUTPUT_SPEED:.2f}.")
+        raise gr.Error(f"Speed harus {MIN_OUTPUT_SPEED:.2f}–{MAX_OUTPUT_SPEED:.2f}.")
     if not MIN_PITCH_SEMITONES <= pitch <= MAX_PITCH_SEMITONES:
-        raise gr.Error(f"Nada harus {MIN_PITCH_SEMITONES:+.0f} hingga {MAX_PITCH_SEMITONES:+.0f} semitone.")
+        raise gr.Error(
+            f"Pitch harus {MIN_PITCH_SEMITONES:+.0f} hingga {MAX_PITCH_SEMITONES:+.0f} semitone."
+        )
     if not torch.is_tensor(audio_tensor):
         audio_tensor = torch.as_tensor(audio_tensor)
     x = audio_tensor.detach().float().cpu()
     if x.ndim == 1:
         x = x.unsqueeze(0)
     if x.ndim != 2 or x.shape[0] != 1 or x.shape[-1] == 0:
-        raise gr.Error("Output audio tidak valid.")
+        raise gr.Error(f"Output audio tidak valid untuk voice controls: {tuple(x.shape)}")
     if not torch.isfinite(x).all():
-        raise gr.Error("Output audio mengandung nilai tidak valid.")
+        raise gr.Error("Output audio mengandung NaN/Inf.")
     if abs(speed - 1.0) <= 1e-9 and abs(pitch) <= 1e-9:
         return x.squeeze(0).numpy().astype(np.float32, copy=True)
 
     waveform = x.squeeze(0).numpy().astype(np.float32, copy=False)
-    with tempfile.TemporaryDirectory(prefix="cangkemanmu_rb_", dir="/content") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix="fireredtts3_rb_hq_", dir="/content") as tmpdir:
         tmp = Path(tmpdir)
         input_raw = tmp / "input.f32"
         output_raw = tmp / "output.f32"
@@ -162,37 +170,66 @@ def apply_voice_controls(audio_tensor, sr, speed, pitch):
         sf.write(str(tmp / "input.wav"), waveform, int(sr), subtype="FLOAT")
         input_raw.write_bytes(waveform.tobytes(order="C"))
         result = _run_rubberband_hq(speed, pitch, input_raw, output_raw, int(sr))
+        if result.stdout:
+            print("[Rubber Band R3 HQ]", result.stdout.strip(), flush=True)
         if not output_raw.is_file() or output_raw.stat().st_size <= 0:
-            raise gr.Error("Proses pemrosesan nada audio gagal.")
+            raise gr.Error("Rubber Band R3 HQ tidak menghasilkan output float32.")
         raw = np.fromfile(output_raw, dtype=np.float32)
         if raw.size == 0 or not np.isfinite(raw).all():
-            raise gr.Error("Hasil pemrosesan audio tidak valid.")
+            raise gr.Error("Output Rubber Band R3 HQ kosong atau mengandung NaN/Inf.")
         peak = float(np.max(np.abs(raw)))
         if not math.isfinite(peak) or peak <= 0:
-            raise gr.Error("Output audio tidak valid.")
+            raise gr.Error("Output Rubber Band R3 HQ tidak valid.")
         if peak > 1.0:
             raw = raw / peak * 0.999
         sf.write(str(output_wav), raw, int(sr), subtype="FLOAT")
         check, out_sr = sf.read(str(output_wav), dtype="float32", always_2d=True)
         if int(out_sr) != int(sr) or check.ndim != 2 or check.shape[1] != 1:
-            raise gr.Error("Output audio akhir tidak valid.")
+            raise gr.Error(f"Output Rubber Band R3 HQ WAV tidak valid/mono: shape={check.shape}, sr={out_sr}")
         check = check[:, 0]
         if check.size == 0 or not np.isfinite(check).all():
-            raise gr.Error("Hasil akhir audio tidak valid.")
+            raise gr.Error("Output Rubber Band R3 HQ WAV invalid setelah penulisan.")
         return np.asarray(check, dtype=np.float32)
 
-def generate_voice(target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones):
+def random_seed():
+    return random.randint(1, 2147483647)
+
+def reset_controls():
+    return 1.0, 0.0
+
+def set_voice_preset(preset_type):
+    if preset_type == "Natural":
+        return 1.0, 0.0
+    elif preset_type == "Deep & Calm":
+        return 0.96, -1.0
+    elif preset_type == "Upbeat / Fast":
+        return 1.06, +0.5
+    elif preset_type == "News Broadcaster":
+        return 0.98, -0.5
+    return 1.0, 0.0
+
+def generate_voice(
+    target_text,
+    reference_transcript,
+    reference_audio,
+    language,
+    seed,
+    output_speed,
+    pitch_semitones,
+):
     try:
         target_text = (target_text or "").strip()
         reference_transcript = (reference_transcript or "").strip()
         if not target_text:
-            raise gr.Error("Naskah target masih kosong.")
+            raise gr.Error("Target text kosong.")
         if not reference_transcript:
-            raise gr.Error("Transkrip referensi kosong. Isi sesuai ucapan sampel audio.")
+            raise gr.Error("Reference transcript kosong. Isi PERSIS ucapan pada reference audio.")
         if len(target_text) > MAX_TARGET_CHARS:
-            raise gr.Error(f"Naskah terlalu panjang ({len(target_text)} karakter); maksimum {MAX_TARGET_CHARS}.")
+            raise gr.Error(
+                f"Target text terlalu panjang ({len(target_text)} karakter); maksimum {MAX_TARGET_CHARS}."
+            )
         if language not in SUPPORTED_LANGUAGES:
-            raise gr.Error(f"Bahasa tidak didukung: {language}")
+            raise gr.Error(f"Unsupported language: {language}")
 
         seed = int(seed)
         speed = float(output_speed)
@@ -200,6 +237,13 @@ def generate_voice(target_text, reference_transcript, reference_audio, language,
 
         prompt_audio, prompt_audio_sr, duration = prepare_reference_audio(reference_audio)
         set_seed(seed)
+
+        print(
+            f"[INFO] language={language} prompt_duration={duration:.2f}s "
+            f"prompt_sr={prompt_audio_sr} seed={seed} "
+            f"speed={speed:.2f} pitch={pitch:+.1f}st",
+            flush=True,
+        )
 
         with torch.inference_mode():
             gen_audio, gen_audio_sr = tts.generate(
@@ -220,8 +264,11 @@ def generate_voice(target_text, reference_transcript, reference_audio, language,
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         safe_speed = f"{speed:.2f}"
         safe_pitch = f"{pitch:+.1f}".replace("+", "p").replace("-", "m")
-        out_path = OUTPUT_DIR / (f"cangkemanmu_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}_spd{safe_speed}_pit{safe_pitch}st.wav")
-        master_path = out_path.with_name(out_path.stem + "_MASTER.wav")
+        out_path = OUTPUT_DIR / (
+            f"fireredtts3_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+            f"_spd{safe_speed}_pit{safe_pitch}st.wav"
+        )
+        master_path = out_path.with_name(out_path.stem + "_HQ_FLOAT32.wav")
         pcm16_path = out_path.with_name(out_path.stem + "_PCM16.wav")
         sf.write(str(master_path), processed, int(gen_audio_sr), subtype="FLOAT")
         sf.write(str(pcm16_path), processed, int(gen_audio_sr), subtype="PCM_16")
@@ -231,7 +278,7 @@ def generate_voice(target_text, reference_transcript, reference_audio, language,
         raise
     except Exception as e:
         traceback.print_exc()
-        raise gr.Error(f"Kloning suara gagal: {type(e).__name__}: {e}")
+        raise gr.Error(f"FireRedTTS3 inference gagal: {type(e).__name__}: {e}")
     finally:
         gc.collect()
         if torch.cuda.is_available():
@@ -241,208 +288,49 @@ APP_DIR = Path(__file__).resolve().parent
 THEME_CSS_FILE = APP_DIR / "theme.css"
 css = THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
-def handle_preset_change(preset_name):
-    if "Alami" in preset_name: return 1.0, 0.0
-    if "Dalam" in preset_name: return 0.96, -1.0
-    if "Enerjik" in preset_name: return 1.06, +0.5
-    if "Formal" in preset_name: return 0.98, -0.5
-    return 1.0, 0.0
-
-with gr.Blocks(title="CANGKEMANMU", css=css, theme=gr.themes.Default()) as demo:
-
-    # State tersembunyi untuk input seed yang diwajibkan oleh backend
-    hidden_seed = gr.Number(value=DEFAULT_SEED, visible=False)
-
-    with gr.Row(elem_classes="app-container"):
-        # Sidebar: hanya elemen navigasi yang sudah ada di project.
-        with gr.Column(elem_classes="sidebar"):
-            gr.HTML("""
-            <div class="brand">
-                <span class="brand-mark" aria-hidden="true">II</span>
-                <span class="brand-name">Cangkemanmu</span>
-            </div>
-
-            <div class="nav-section">
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-5h5v5"/></svg>
-                    <span>Home</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><circle cx="8" cy="16" r="2.5"/><circle cx="16" cy="16" r="2.5"/></svg>
-                    <span>Voices</span><span class="plus-icon">+</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 5.5h10l4 4V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1Z"/><path d="M15 5.5V10h4"/><path d="M8 14h8M8 17h5"/></svg>
-                    <span>Studio Suara</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m6 6 12 6-12 6V6Z"/><path d="M12 3v18" opacity="0"/></svg>
-                    <span>Templat</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 7.5h15v11h-15z"/><path d="M7 7.5V5h10v2.5"/></svg>
-                    <span>Aset</span>
-                </a>
-            </div>
-
-            <div class="nav-section-title">Pintasan</div>
-            <div class="nav-section">
-                <a href="#" class="nav-item active">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12h3l2-5 3 10 2-5h6"/></svg>
-                    <span>Kloning Suara</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 2-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.8v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-2-2 .1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H5v-2.8h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-2 .1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V5h2.8v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 2 2-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-                    <span>Pengaturan Lanjutan</span>
-                </a>
-            </div>
-
-            <div class="sidebar-bottom">
-                <a href="#" class="nav-item">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m20 15-4.5-4.5L7 19"/></svg>
-                    <span>Cangkemanmu</span>
-                </a>
-                <div class="bottom-switch-wrap">
-                    <a href="#" class="nav-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 12h3l2-5 3 10 2-5h6"/></svg>
-                        <span>Creative Suite</span>
-                    </a>
-                    <button class="switch-btn" type="button">Switch</button>
-                </div>
-            </div>
-            """)
-
-        with gr.Column(elem_classes="main-wrapper"):
-            gr.HTML("""
-            <div class="top-header">
-                <div class="header-title">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h6"/></svg>
-                    <span>Text to Speech</span>
-                </div>
-                <div class="header-spacer"></div>
-                <div class="header-actions">
-                    <div class="header-search">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-                        <input type="text" placeholder="Pencarian..." aria-label="Pencarian" />
-                        <span class="search-shortcut">⌘&nbsp; K</span>
-                    </div>
-                    <button type="button">Feedback</button>
-                    <button type="button">Docs</button>
-                    <button type="button">Ask</button>
-                    <button class="icon-btn" type="button" aria-label="Folder">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 6.5h6l2 2h9v10a1 1 0 0 1-1 1h-16z"/><path d="M3.5 9h17"/></svg>
-                    </button>
-                    <button class="icon-btn has-dot" type="button" aria-label="Notifikasi">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 9a6 6 0 0 0-12 0c0 5-2 5.5-2 7h16c0-1.5-2-2-2-7Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
-                    </button>
-                    <div class="avatar">h</div>
-                </div>
-            </div>
-            """)
-
-            with gr.Row(elem_classes="workspace-split"):
-                with gr.Column(elem_classes="pane-left"):
-                    target_text = gr.Textbox(
-                        lines=12,
-                        show_label=False,
-                        elem_id="target-input",
-                        placeholder="Mulai mengetik di sini atau tempel teks apa pun yang ingin diubah menjadi suara alami..."
-                    )
-
-                    reference_transcript = gr.Textbox(
-                        lines=2,
-                        show_label=False,
-                        elem_id="ref-transcript-input",
-                        placeholder="Transkrip referensi — ketik persis ucapan pada sampel audio..."
-                    )
-
-                    gr.HTML("<div class='prompt-label'>Coba naskah contoh</div>")
-                    with gr.Row(elem_classes="prompt-grid"):
-                        btn_story = gr.Button("📖  Narasi sebuah cerita", elem_classes="prompt-btn")
-                        btn_joke = gr.Button("☺  Ceritakan lelucon lucu", elem_classes="prompt-btn")
-                        btn_ad = gr.Button("◉  Rekam iklan", elem_classes="prompt-btn")
-                        btn_lang = gr.Button("文  Berbicara dalam berbagai bahasa", elem_classes="prompt-btn")
-                        btn_movie = gr.Button("▣  Arahkan adegan film dramatis", elem_classes="prompt-btn")
-                        btn_game = gr.Button("◉  Dengarkan dari karakter video game", elem_classes="prompt-btn")
-                        btn_pod = gr.Button("◉  Perkenalkan podcast Anda", elem_classes="prompt-btn")
-                        btn_med = gr.Button("◌  Pandu kelas meditasi", elem_classes="prompt-btn")
-
-                with gr.Column(elem_classes="pane-right"):
-                    with gr.Tabs(elem_classes="settings-tabs"):
-                        with gr.Tab("Pengaturan", id=1):
-                            gr.HTML("""
-                            <div class="promo-banner">
-                                <div class="promo-icon">
-                                    <div class="promo-glow"></div>
-                                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6"><path d="M6 5v10m0 0c0 2 1.6 3.5 3.5 3.5S13 17 13 15V9c0-1.7 1.3-3 3-3s3 1.3 3 3v6"/><circle cx="6" cy="5" r="1.3" fill="white" stroke="none"/><circle cx="19" cy="15" r="1.3" fill="white" stroke="none"/></svg>
-                                </div>
-                                <div class="promo-text">
-                                    <div class="promo-title">Try Flows</div>
-                                    <div class="promo-desc">Node-based canvas for creating image, video, speech, music, all in one place.</div>
-                                </div>
-                                <div class="promo-close">×</div>
-                            </div>
-                            """)
-
-                            gr.HTML("<div class='setting-title'>Voice</div>")
-                            voice_preset = gr.Dropdown(
-                                choices=["Preset Alami - Tenang, Jernih", "Dalam & Tenang", "Cepat & Enerjik", "Formal / Narasi"],
-                                value="Preset Alami - Tenang, Jernih",
-                                show_label=False,
-                                elem_classes="custom-dropdown"
-                            )
-
-                            gr.HTML("<div class='setting-title section-gap'>Bahasa</div>")
-                            language = gr.Dropdown(
-                                choices=SUPPORTED_LANGUAGES,
-                                value="Indonesian",
-                                show_label=False,
-                                elem_classes="custom-dropdown"
-                            )
-
-                            with gr.Row(elem_classes="sliders-row"):
-                                output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan", elem_classes="slim-slider")
-                                pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada", elem_classes="slim-slider")
-
-                            gr.HTML("<div class='setting-title section-gap'>Sampel Suara Referensi</div>")
-                            reference_audio = gr.Audio(
-                                sources=["upload", "microphone"],
-                                type="filepath",
-                                label=None,
-                                elem_classes="custom-audio-uploader"
-                            )
-
-                            gr.HTML("<div class='setting-title section-gap result-title'>Hasil Sintesis</div>")
-                            generated_audio = gr.Audio(show_label=False, autoplay=False, elem_classes="custom-audio-player")
-                            saved_path = gr.Textbox(visible=False)
-
-                            generate_btn = gr.Button("⚡  Kloning Suara Sekarang", elem_classes="generate-btn")
-
-                        with gr.Tab("Riwayat", id=2):
-                            gr.HTML("<div class='history-empty'>Belum ada riwayat kloning suara.</div>")
-
-    # -------------------------------------------------------------
-    # EVENT HANDLERS
-    # -------------------------------------------------------------
-    # Mengikat Preset Dropdown ke Slider
-    voice_preset.change(handle_preset_change, inputs=[voice_preset], outputs=[output_speed, pitch_semitones])
-
-    # Mengikat Naskah Sampel ke Target Text
-    btn_story.click(lambda: TEXT_OPTION_1, outputs=[target_text])
-    btn_joke.click(lambda: TEXT_OPTION_2, outputs=[target_text])
-    btn_ad.click(lambda: TEXT_OPTION_3, outputs=[target_text])
-    btn_lang.click(lambda: TEXT_OPTION_1, outputs=[target_text])
-    btn_movie.click(lambda: TEXT_OPTION_2, outputs=[target_text])
-    btn_game.click(lambda: TEXT_OPTION_3, outputs=[target_text])
-    btn_pod.click(lambda: TEXT_OPTION_1, outputs=[target_text])
-    btn_med.click(lambda: TEXT_OPTION_2, outputs=[target_text])
-
-    # Eksekusi Generate
-    generate_btn.click(
-        generate_voice,
-        inputs=[target_text, reference_transcript, reference_audio, language, hidden_seed, output_speed, pitch_semitones],
-        outputs=[generated_audio, saved_path]
-    )
+with gr.Blocks(title="FireRed Studio — Neural Voice Lab", css=css, theme=gr.themes.Soft()) as demo:
+    gr.HTML("""<div class="topbar"><div class="brand-lockup"><div class="brand-mark"><span></span><span></span><span></span></div><div><div class="brand-name">FIRERED</div><div class="brand-product">NEURAL VOICE LAB</div></div></div><div class="topbar-status"><span class="status-dot"></span> SYSTEM ONLINE <b>•</b> T4 GPU</div></div>""")
+    gr.HTML("""<section class="hero-v2"><div class="hero-grid"></div><div class="hero-copy"><div class="eyebrow"><span class="eyebrow-line"></span> AI VOICE WORKSPACE</div><h1>Give words a <em>voice.</em></h1><p>Clone a voice, shape its character, and turn your script into expressive speech — all from one focused studio.</p><div class="hero-metrics"><span><b>24+</b> languages</span><i></i><span><b>24 kHz</b> output</span><i></i><span><b>HQ</b> DSP engine</span></div></div><div class="hero-visual"><div class="voice-orb"><div class="orb-core"></div></div><div class="wave-stack"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="orb-caption">VOICE SYNTHESIS<br><b>READY</b></div></div></section>""")
+    with gr.Row(elem_classes=["workspace"]):
+        with gr.Column(scale=7):
+            with gr.Group(elem_classes=["glass-panel","step-panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-icon">01</div><div><div class="panel-kicker">VOICE SOURCE</div><div class="panel-title">Capture the voice</div></div><div class="panel-check">● READY</div></div>""")
+                with gr.Row():
+                    reference_audio=gr.Audio(sources=["upload","microphone"],type="filepath",label="Reference audio · 2–20 sec")
+                    reference_transcript=gr.Textbox(label="Exact transcript",lines=5,placeholder="Type exactly what is spoken in your reference audio…")
+            with gr.Group(elem_classes=["glass-panel","step-panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-icon">02</div><div><div class="panel-kicker">SCRIPT</div><div class="panel-title">Write what you want to hear</div></div><div class="char-pill">MAX 500</div></div>""")
+                target_text=gr.Textbox(label="",lines=5,max_lines=8,placeholder="Start writing your script… Make it conversational, cinematic, or completely yours.")
+                gr.Markdown("<div class='micro-label'>QUICK SCRIPTS</div>")
+                with gr.Row():
+                    sample_1=gr.Button("✦  Welcome",elem_classes=["chip-btn"]); sample_2=gr.Button("◈  Tech News",elem_classes=["chip-btn"]); sample_3=gr.Button("○  Casual",elem_classes=["chip-btn"])
+                with gr.Row(elem_classes=["compact-row"]):
+                    language=gr.Dropdown(choices=SUPPORTED_LANGUAGES,value="Indonesian",label="Language")
+                    seed=gr.Number(value=DEFAULT_SEED,precision=0,label="Seed")
+                    random_button=gr.Button("↻",elem_classes=["icon-btn"],scale=0)
+            with gr.Group(elem_classes=["glass-panel","step-panel"]):
+                gr.HTML("""<div class="panel-head"><div class="step-icon">03</div><div><div class="panel-kicker">VOICE DESIGN</div><div class="panel-title">Shape the performance</div></div><div class="panel-check">DSP · HQ</div></div>""")
+                gr.Markdown("<div class='micro-label'>CHARACTER PRESETS</div>")
+                with gr.Row():
+                    preset_nat=gr.Button("Natural",elem_classes=["preset-btn"]); preset_deep=gr.Button("Deep & Calm",elem_classes=["preset-btn"]); preset_fast=gr.Button("Upbeat",elem_classes=["preset-btn"]); preset_news=gr.Button("News",elem_classes=["preset-btn"])
+                with gr.Row():
+                    output_speed=gr.Slider(minimum=MIN_OUTPUT_SPEED,maximum=MAX_OUTPUT_SPEED,value=1.0,step=0.01,label="Speed")
+                    pitch_semitones=gr.Slider(minimum=MIN_PITCH_SEMITONES,maximum=MAX_PITCH_SEMITONES,value=0.0,step=0.5,label="Pitch")
+                reset_button=gr.Button("Reset voice controls",elem_classes=["ghost-btn"])
+        with gr.Column(scale=5,elem_classes=["output-column"]):
+            with gr.Group(elem_classes=["output-card"]):
+                gr.HTML("""<div class="output-top"><div><div class="panel-kicker">04 · OUTPUT</div><div class="output-title">Your voice, rendered.</div></div><div class="render-badge"><span></span> HQ RENDER</div></div><div class="render-visual"><div class="render-glow"></div><div class="render-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="render-center">24<span>kHz</span></div></div>""")
+                generate_button=gr.Button("Generate voice  →",variant="primary",elem_classes=["generate-btn"])
+                generated_audio=gr.Audio(label="Preview",autoplay=False)
+                saved_path=gr.Textbox(label="Master file",interactive=False,elem_classes=["file-output"])
+                gr.HTML("""<div class="output-note"><span>⚡</span> FireRedTTS3 + Rubber Band R3 HQ <span class="note-right">FLOAT32 MASTER</span></div>""")
+    gr.HTML("""<div class="footer-line"><span>FIRERED STUDIO</span><span>·</span><span>PRIVATE VOICE WORKSPACE</span><span class="footer-right">v3 · NEURAL AUDIO</span></div>""")
+    sample_1.click(lambda:"Selamat datang di FireRed Studio. Suara ini dikloning secara presisi menggunakan teknologi AI terbaru.",outputs=[target_text])
+    sample_2.click(lambda:"Perkembangan kecerdasan buatan dalam pemrosesan audio kini memungkinkan pembacaan teks dengan artikulasi yang sangat alami.",outputs=[target_text])
+    sample_3.click(lambda:"Halo semuanya! Semoga hari kalian menyenangkan dan proyek audio kalian berjalan dengan lancar ya.",outputs=[target_text])
+    preset_nat.click(lambda:set_voice_preset("Natural"),outputs=[output_speed,pitch_semitones]); preset_deep.click(lambda:set_voice_preset("Deep & Calm"),outputs=[output_speed,pitch_semitones]); preset_fast.click(lambda:set_voice_preset("Upbeat / Fast"),outputs=[output_speed,pitch_semitones]); preset_news.click(lambda:set_voice_preset("News Broadcaster"),outputs=[output_speed,pitch_semitones])
+    reset_button.click(reset_controls,inputs=[],outputs=[output_speed,pitch_semitones]); random_button.click(random_seed,inputs=[],outputs=[seed])
+    generate_button.click(generate_voice,inputs=[target_text,reference_transcript,reference_audio,language,seed,output_speed,pitch_semitones],outputs=[generated_audio,saved_path])
 
 demo.queue(max_size=4, default_concurrency_limit=1)
 
@@ -462,9 +350,9 @@ except Exception:
 selected_url = share_url or local_url
 if selected_url:
     URL_FILE.write_text(str(selected_url), encoding="utf-8")
-    print("CANGKEMANMU_WEBUI_URL:", selected_url, flush=True)
+    print("FIREREDTTS3_WEBUI_URL:", selected_url, flush=True)
 else:
-    print("CANGKEMANMU_WEBUI_URL: unavailable", flush=True)
+    print("FIREREDTTS3_WEBUI_URL: unavailable", flush=True)
 
 while True:
     time.sleep(3600)
