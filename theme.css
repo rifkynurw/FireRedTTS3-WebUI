@@ -1,332 +1,230 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-:root {
-  --bg-main: #FFFFFF;
-  --bg-sidebar: #F8FAFC;
-  --card-bg: #FFFFFF;
-  --border-color: #E2E8F0;
-  --border-focus: #0F172A;
-  
-  --text-dark: #0F172A;
-  --text-muted: #64748B;
-  --accent-primary: #0F172A;
-  --accent-hover: #1E293B;
-  --green-online: #10B981;
-  
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-}
-
-* {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
-  box-sizing: border-box;
-}
+/* ==========================================================================
+   RESET & FONDASI GRADIO
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 body, .gradio-container {
-  background-color: var(--bg-main) !important;
-  color: var(--text-dark) !important;
-  margin: 0 !important;
-  padding: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    background-color: #ffffff !important;
+    overflow: hidden !important; /* Mencegah double scroll */
 }
 
-.gradio-container {
-  max-width: 1440px !important;
-  margin: 0 auto !important;
+/* Hilangkan footer/badge default bawaan gradio */
+footer { display: none !important; }
+.gradio-container > .main { flex: 1; display: flex; flex-direction: column; }
+
+/* ==========================================================================
+   LAYOUT UTAMA (Sidebar Kiri & Main Content)
+   ========================================================================== */
+.app-container {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
 }
 
-footer {
-  display: none !important;
-}
-
-/* ==========================================
-   SIDEBAR DESAIN (PENGATURAN & BRANDING)
-   ========================================== */
-.sidebar-container {
-  background-color: var(--bg-sidebar) !important;
-  border-right: 1px solid var(--border-color) !important;
-  padding: 24px 18px !important;
-}
-
-.sidebar-brand {
-  margin-bottom: 20px;
-}
-
-.brand-name {
-  font-size: 18px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.06em !important;
-  color: var(--text-dark) !important;
-  margin: 0 !important;
-  line-height: 1.1 !important;
-}
-
-.brand-sub {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  display: block;
-  margin-top: 2px;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: #FFFFFF;
-  border: 1px solid var(--border-color);
-  padding: 4px 10px;
-  border-radius: 20px;
-  margin-top: 12px;
-}
-
-.pulse-dot {
-  width: 6px;
-  height: 6px;
-  background-color: var(--green-online);
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-}
-
-.sidebar-divider {
-  height: 1px;
-  background-color: var(--border-color);
-  margin: 20px 0;
-}
-
-.sidebar-section {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin-bottom: 14px;
-}
-
-.section-num {
-  width: 20px;
-  height: 20px;
-  background-color: var(--accent-primary);
-  color: #FFFFFF;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px;
-}
-
-.field-sublabel {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin: 12px 0 6px;
-}
-
-.preset-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px !important;
-  margin-bottom: 12px;
-}
-
-.chip-btn {
-  background: #FFFFFF !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-dark) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  padding: 6px 8px !important;
-  border-radius: 8px !important;
-  transition: all 0.15s ease !important;
-}
-
-.chip-btn:hover {
-  border-color: var(--accent-primary) !important;
-  background: #F1F5F9 !important;
-}
-
-.seed-row {
-  align-items: flex-end !important;
-  gap: 8px !important;
-}
-
-.refresh-btn {
-  min-width: 38px !important;
-  height: 42px !important;
-  background: #FFFFFF !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
-  font-size: 14px !important;
-}
-
-.reset-btn {
-  background: transparent !important;
-  border: none !important;
-  color: var(--text-muted) !important;
-  font-size: 11px !important;
-  text-decoration: underline;
-  margin-top: 8px;
-  cursor: pointer;
-}
-
-/* ==========================================
-   AREA UTAMA (TENGAH - NASKAH & OUTPUT)
-   ========================================== */
-.main-workspace {
-  padding: 32px 40px !important;
-  max-width: 900px !important;
-  margin: 0 auto !important;
-}
-
-.main-header {
-  margin-bottom: 24px;
-}
-
-.main-header h2 {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 0 0 6px 0;
-}
-
-.main-header p {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.main-card {
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 16px !important;
-  padding: 28px !important;
-  box-shadow: var(--shadow-sm) !important;
-  margin-bottom: 24px !important;
-}
-
-.preset-label {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin: 20px 0 10px;
-}
-
-.sample-options-row {
-  gap: 10px !important;
-  margin-bottom: 24px;
-}
-
-.sample-card-btn {
-  background: #F8FAFC !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-dark) !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  padding: 12px 14px !important;
-  border-radius: 10px !important;
-  text-align: left !important;
-  transition: all 0.15s ease !important;
-}
-
-.sample-card-btn:hover {
-  background: #F1F5F9 !important;
-  border-color: var(--accent-primary) !important;
-}
-
-.btn-generate-hero {
-  background: var(--accent-primary) !important;
-  color: #FFFFFF !important;
-  border: none !important;
-  border-radius: 12px !important;
-  padding: 16px 24px !important;
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  width: 100% !important;
-  box-shadow: var(--shadow-md) !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer;
-}
-
-.btn-generate-hero:hover {
-  background: var(--accent-hover) !important;
-  transform: translateY(-1px);
-}
-
-.output-card {
-  background: #FAFBFD !important;
-  border-color: #CBD5E1 !important;
-}
-
-.output-header h3 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin: 0 0 16px 0;
-}
-
-.file-path-box input {
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px !important;
-  background: #FFFFFF !important;
-}
-
-/* INPUT COMPONENT STYLING */
-input, textarea, .gradio-dropdown, .gradio-audio {
-  background: #FFFFFF !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 10px !important;
-  color: var(--text-dark) !important;
-}
-
-textarea:focus, input:focus {
-  border-color: var(--border-focus) !important;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.05) !important;
-}
-
-label span {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  color: var(--text-muted) !important;
-  letter-spacing: 0.04em;
-}
-
-/* FOOTER HALUS */
-.main-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: var(--text-muted);
-  border-top: 1px solid var(--border-color);
-  padding-top: 20px;
-  margin-top: 32px;
-}
-
-@media (max-width: 800px) {
-  .sample-options-row {
+/* SIDEBAR KIRI */
+.sidebar {
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    background-color: #f8fafc !important;
+    border-right: 1px solid #e2e8f0 !important;
+    display: flex !important;
     flex-direction: column !important;
-  }
-  .main-workspace {
-    padding: 20px !important;
-  }
-  .main-footer {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-  }
+    height: 100vh !important;
+    padding: 16px 12px !important;
+    box-sizing: border-box !important;
 }
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    padding: 8px 12px 24px 12px;
+    color: #111827;
+}
+
+.nav-section { display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px; }
+.nav-section-title { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 8px; padding: 0 12px; letter-spacing: 0.5px; }
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.nav-item:hover { background-color: #f1f5f9; color: #0f172a; }
+.nav-item.active { background-color: #e2e8f0; color: #0f172a; }
+.nav-item .plus-icon { margin-left: auto; color: #94a3b8; font-size: 16px; }
+
+.sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
+.bottom-switch-wrap { display: flex; align-items: center; justify-content: space-between; }
+.switch-btn { border: 1px solid #cbd5e1; background: white; border-radius: 99px; padding: 2px 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: #475569; }
+
+/* MAIN CONTENT WRAPPER */
+.main-wrapper {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+}
+
+/* ==========================================================================
+   TOP HEADER BAR
+   ========================================================================== */
+.top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    min-height: 56px;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 20px;
+    background-color: #ffffff;
+}
+
+.header-title { display: flex; align-items: center; font-size: 15px; font-weight: 600; color: #1e293b; }
+.header-search { display: flex; align-items: center; background: #f1f5f9; border-radius: 6px; padding: 6px 12px; gap: 8px; width: 300px; color: #94a3b8; }
+.header-search input { border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #334155; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.header-actions button { background: white; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer; }
+.header-actions .icon-btn { padding: 6px; display: flex; align-items: center; justify-content: center; border: none; }
+.header-actions .avatar { background: #64748b; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+
+/* ==========================================================================
+   WORK SPACE (Split Kiri / Kanan)
+   ========================================================================== */
+.workspace-split {
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 1 !important;
+    overflow: hidden !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
+}
+
+/* PANE KIRI (Editor Teks) */
+.pane-left {
+    flex: 6 !important;
+    padding: 32px 40px !important;
+    overflow-y: auto !important;
+    border-right: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+}
+
+/* Styling Khusus Textbox di Gradio */
+#target-input, #ref-transcript-input { background: transparent !important; border: none !important; box-shadow: none !important; }
+#target-input textarea {
+    background: linear-gradient(to bottom right, #f8fafc, #f1f5f9) !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    font-size: 16px !important;
+    line-height: 1.5 !important;
+    color: #334155 !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02) !important;
+    resize: none !important;
+}
+#target-input textarea:focus { outline: none !important; border-color: #94a3b8 !important; }
+
+#ref-transcript-input textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 14px 20px !important;
+    font-size: 14px !important;
+    color: #475569 !important;
+    margin-top: 16px !important;
+}
+
+.prompt-label { font-size: 14px; font-weight: 500; color: #1e293b; margin-top: 32px; margin-bottom: 16px; }
+
+.prompt-grid { display: flex !important; flex-wrap: wrap !important; gap: 10px !important; }
+.prompt-btn {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 99px !important;
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    box-shadow: none !important;
+    transition: all 0.2s !important;
+    width: auto !important;
+    flex-grow: 0 !important;
+}
+.prompt-btn:hover { background: #f8fafc !important; border-color: #cbd5e1 !important; }
+
+/* PANE KANAN (Pengaturan & Hasil) */
+.pane-right {
+    flex: 4 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background-color: #ffffff !important;
+    overflow-y: auto !important;
+}
+
+/* Tabs Styling override */
+.settings-tabs { background: transparent !important; border: none !important; display: flex !important; flex-direction: column !important; height: 100% !important;}
+.settings-tabs > div.tab-nav { border-bottom: 1px solid #e2e8f0 !important; padding: 0 20px !important; gap: 20px !important; margin: 0 !important; }
+.settings-tabs > div.tab-nav > button { border: none !important; background: transparent !important; padding: 16px 4px !important; font-size: 14px !important; font-weight: 600 !important; color: #64748b !important; }
+.settings-tabs > div.tab-nav > button.selected { color: #0f172a !important; border-bottom: 2px solid #0f172a !important; }
+.settings-tabs > div.tabitem { padding: 24px !important; display: flex; flex-direction: column; gap: 16px; border: none !important; }
+
+/* Banner Promo */
+.promo-banner {
+    display: flex; align-items: center; background: #ffffff; border: 1px solid #f3e8ff; border-radius: 12px; padding: 12px; gap: 16px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;
+}
+.promo-icon { background: linear-gradient(135deg, #f472b6, #fb7185); color: white; width: 60px; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; }
+.promo-text { flex: 1; }
+.promo-title { font-weight: 600; font-size: 14px; color: #1e293b; margin-bottom: 4px; }
+.promo-desc { font-size: 12px; color: #64748b; line-height: 1.4; }
+.promo-close { position: absolute; top: 12px; right: 12px; cursor: pointer; color: #94a3b8; font-size: 14px; }
+
+/* Dropdown & Control Inputs */
+.setting-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+
+.custom-dropdown > div { border: 1px solid #e2e8f0 !important; border-radius: 8px !important; background: #ffffff !important; box-shadow: none !important; }
+.custom-dropdown input { color: #334155 !important; font-weight: 500 !important; font-size: 14px !important;}
+
+.sliders-row { display: flex !important; gap: 20px !important; margin-top: 10px !important; margin-bottom: 10px !important; }
+.slim-slider { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.slim-slider label span { font-size: 13px !important; font-weight: 500 !important; color: #1e293b !important; }
+
+/* Upload & Audio Playback */
+.custom-audio-uploader { background: transparent !important; border: 1px dashed #cbd5e1 !important; border-radius: 12px !important; box-shadow: none !important; }
+.custom-audio-player { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; box-shadow: none !important; padding: 8px !important;}
+
+/* Tombol Generate */
+button.generate-btn {
+    background: #64748b !important; /* Warna Abu-abu / Slate */
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    border-radius: 99px !important;
+    border: none !important;
+    padding: 14px 24px !important;
+    width: 100% !important;
+    margin-top: auto !important; /* Dorong ke paling bawah */
+    box-shadow: 0 4px 10px rgba(100, 116, 139, 0.2) !important;
+    transition: all 0.2s !important;
+    cursor: pointer !important;
+}
+button.generate-btn:hover { background: #475569 !important; transform: translateY(-1px); }
