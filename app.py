@@ -54,6 +54,29 @@ MAX_OUTPUT_SPEED = 1.15
 MIN_PITCH_SEMITONES = -2.0
 MAX_PITCH_SEMITONES = 2.0
 
+# 3 Opsi Teks (Masing-masing ~400 Karakter)
+TEXT_OPTION_1 = (
+    "Selamat datang di era baru teknologi penyuaraan digital. Di sini, setiap kata "
+    "yang Anda tuliskan mampu diubah menjadi alunan suara yang jernih, alami, dan penuh emosi. "
+    "Teknologi ini dirancang untuk membantu para kreator konten, penulis, serta profesional dalam "
+    "menghidupkan narasi mereka secara presisi. Mulailah mengekspresikan ide-ide terbaik Anda "
+    "dengan kualitas audio berstandar studio tinggi sekarang juga."
+) # 407 Karakter
+
+TEXT_OPTION_2 = (
+    "Perkembangan teknologi audio saat ini memungkinkan proses kloning suara dilakukan dengan sangat cepat "
+    "dan akurat. Anda tidak perlu lagi melakukan rekaman ulang berulang kali untuk mendapatkan hasil penyampaian "
+    "yang sempurna. Cukup masukkan teks serta contoh sampel suara referensi, lalu biarkan sistem bekerja menghasilkan "
+    "artikulasi yang alami, intonasi yang pas, serta kualitas suara yang sangat jernih."
+) # 413 Karakter
+
+TEXT_OPTION_3 = (
+    "Halo semuanya! Selamat datang kembali di ruang kreatif kita. Hari ini saya mau berbagi cerita menarik "
+    "tentang bagaimana ide-ide kecil bisa diubah menjadi karya besar dengan bantuan alat audio yang tepat. "
+    "Jangan lupa untuk terus mengeksplorasi potensi diri Anda, mencoba hal-hal baru, dan menciptakan konten yang "
+    "menginspirasi banyak orang. Terima kasih sudah mendengarkan dan semoga hari Anda selalu menyenangkan!"
+) # 418 Karakter
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed % (2**32 - 1))
@@ -113,12 +136,12 @@ def validate_generated_audio(audio):
     if audio.ndim == 1:
         audio = audio.unsqueeze(0)
     if audio.ndim != 2 or audio.shape[-1] <= 0:
-        raise RuntimeError(f"Ukuran audio hasil sintesis tidak valid: {tuple(audio.shape)}")
+        raise RuntimeError(f"Ukuran audio tidak valid: {tuple(audio.shape)}")
     if not torch.isfinite(audio).all():
-        raise gr.Error("Audio hasil sintesis mengandung nilai tidak valid.")
+        raise gr.Error("Audio sintesis mengandung nilai tidak valid.")
     peak = float(audio.abs().max().item())
     if not math.isfinite(peak) or peak <= 0:
-        raise gr.Error("Audio hasil sintesis kosong.")
+        raise gr.Error("Audio sintesis kosong.")
     if peak > 1.0:
         audio = audio / peak * 0.999
     return audio
@@ -132,7 +155,7 @@ def _run_rubberband_hq(speed, pitch, input_path, output_path, sr):
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
     if result.returncode != 0:
-        raise gr.Error("Pemrosesan nada dan kecepatan audio gagal.")
+        raise gr.Error("Proses penyelarasan nada & kecepatan audio gagal.")
     return result
 
 def apply_voice_controls(audio_tensor, sr, speed, pitch):
@@ -166,10 +189,10 @@ def apply_voice_controls(audio_tensor, sr, speed, pitch):
         input_raw.write_bytes(waveform.tobytes(order="C"))
         result = _run_rubberband_hq(speed, pitch, input_raw, output_raw, int(sr))
         if not output_raw.is_file() or output_raw.stat().st_size <= 0:
-            raise gr.Error("Pemrosesan audio gagal menghasilkan berkas.")
+            raise gr.Error("Proses pemrosesan nada audio gagal.")
         raw = np.fromfile(output_raw, dtype=np.float32)
         if raw.size == 0 or not np.isfinite(raw).all():
-            raise gr.Error("Pemrosesan audio tidak valid.")
+            raise gr.Error("Hasil pemrosesan audio tidak valid.")
         peak = float(np.max(np.abs(raw)))
         if not math.isfinite(peak) or peak <= 0:
             raise gr.Error("Output audio tidak valid.")
@@ -191,13 +214,13 @@ def reset_controls():
     return 1.0, 0.0
 
 def set_voice_preset(preset_type):
-    if preset_type == "Natural":
+    if preset_type == "Alami":
         return 1.0, 0.0
-    elif preset_type == "Deep & Calm":
+    elif preset_type == "Dalam & Tenang":
         return 0.96, -1.0
-    elif preset_type == "Upbeat / Fast":
+    elif preset_type == "Cepat & Enerjik":
         return 1.06, +0.5
-    elif preset_type == "News Broadcaster":
+    elif preset_type == "Formal / Narasi":
         return 0.98, -0.5
     return 1.0, 0.0
 
@@ -216,7 +239,7 @@ def generate_voice(
         if not target_text:
             raise gr.Error("Naskah target masih kosong.")
         if not reference_transcript:
-            raise gr.Error("Transkrip referensi kosong. Isi persis ucapan pada sampel suara.")
+            raise gr.Error("Transkrip referensi kosong. Isi sesuai ucapan sampel audio.")
         if len(target_text) > MAX_TARGET_CHARS:
             raise gr.Error(
                 f"Naskah terlalu panjang ({len(target_text)} karakter); maksimum {MAX_TARGET_CHARS}."
@@ -264,7 +287,7 @@ def generate_voice(
         raise
     except Exception as e:
         traceback.print_exc()
-        raise gr.Error(f"Proses kloning suara gagal: {type(e).__name__}: {e}")
+        raise gr.Error(f"Kloning suara gagal: {type(e).__name__}: {e}")
     finally:
         gc.collect()
         if torch.cuda.is_available():
@@ -274,160 +297,146 @@ APP_DIR = Path(__file__).resolve().parent
 THEME_CSS_FILE = APP_DIR / "theme.css"
 css = THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
-with gr.Blocks(title="CANGKEMANMU — Kloning Suara Studio", css=css, theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="CANGKEMANMU — Voice Cloning Studio", css=css, theme=gr.themes.Soft()) as demo:
+    # HEADER BAR
     gr.HTML("""
-    <div class="topbar">
-      <div class="brand-lockup">
-        <div class="brand-mark">
-          <span></span><span></span><span></span>
+    <header class="studio-nav">
+      <div class="nav-brand">
+        <div class="brand-logo-icon">
+          <span></span><span></span><span></span><span></span>
         </div>
-        <div>
-          <div class="brand-name">CANGKEMANMU</div>
-          <div class="brand-product">BY RIFKY WIJAYANTO</div>
+        <div class="brand-text">
+          <span class="app-title">CANGKEMANMU</span>
+          <span class="app-author">by Rifky Wijayanto</span>
         </div>
       </div>
-      <div class="topbar-status">
-        <span class="status-dot"></span> STUDIO ONLINE <b>•</b> SIAP
+      <div class="nav-status">
+        <span class="pulse-dot"></span> STUDIO READY
       </div>
-    </div>
+    </header>
     """)
-    
-    gr.HTML("""
-    <section class="hero-v2">
-      <div class="hero-grid"></div>
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-line"></span> KLONING SUARA PRESISI</div>
-        <h1>Sintesis Suara <em>Sempurna & Alami.</em></h1>
-        <p>Kloning karakter suara Anda dan ubah naskah teks menjadi rekaman audio yang realistis, jernih, dan penuh ekspresi secara instan.</p>
-        <div class="hero-metrics">
-          <span><b>24+</b> Bahasa</span><i></i>
-          <span><b>24 kHz</b> Kualitas Studio</span><i></i>
-          <span><b>Pro</b> Voice Engine</span>
-        </div>
-      </div>
-      <div class="hero-visual">
-        <div class="voice-orb">
-          <div class="orb-core"></div>
-        </div>
-        <div class="wave-stack">
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <div class="orb-caption">KLONING SUARA<br><b>READY</b></div>
-      </div>
-    </section>
-    """)
-    
-    with gr.Row(elem_classes=["workspace"]):
-      with gr.Column(scale=7):
-        with gr.Group(elem_classes=["glass-panel","step-panel"]):
-          gr.HTML("""
-          <div class="panel-head">
-            <div class="step-icon">01</div>
-            <div>
-              <div class="panel-kicker">SUARA REFERENSI</div>
-              <div class="panel-title">Unggah sampel suara</div>
-            </div>
-            <div class="panel-check">● READY</div>
-          </div>
-          """)
-          with gr.Row():
-            reference_audio = gr.Audio(sources=["upload","microphone"], type="filepath", label="Audio Referensi (2–20 detik)")
-            reference_transcript = gr.Textbox(label="Transkrip Tepat Suara Referensi", lines=5, placeholder="Tuliskan kata-kata yang diucapkan pada sampel suara secara tepat...")
+
+    # MAIN WORKSPACE SPLIT (LEFT / RIGHT)
+    with gr.Row(elem_classes=["studio-container"]):
+        
+        # KOLOM KIRI: SAMPEL SUARA & NASKAH TEKS
+        with gr.Column(scale=6, elem_classes=["column-panel"]):
             
-        with gr.Group(elem_classes=["glass-panel","step-panel"]):
-          gr.HTML("""
-          <div class="panel-head">
-            <div class="step-icon">02</div>
-            <div>
-              <div class="panel-kicker">NASKAH SUARA</div>
-              <div class="panel-title">Tulis kalimat yang ingin diucapkan</div>
-            </div>
-            <div class="char-pill">MAKS 500 KARAKTER</div>
-          </div>
-          """)
-          target_text = gr.Textbox(label="", lines=5, max_lines=8, placeholder="Mulai ketik naskah suara Anda di sini...")
-          gr.Markdown("<div class='micro-label'>NASKAH CEPAT</div>")
-          with gr.Row():
-            sample_1 = gr.Button("✦  Sambutan", elem_classes=["chip-btn"])
-            sample_2 = gr.Button("◈  Berita", elem_classes=["chip-btn"])
-            sample_3 = gr.Button("○  Santai", elem_classes=["chip-btn"])
-          with gr.Row(elem_classes=["compact-row"]):
-            language = gr.Dropdown(choices=SUPPORTED_LANGUAGES, value="Indonesian", label="Bahasa Suara")
-            seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Variasi")
-            random_button = gr.Button("↻", elem_classes=["icon-btn"], scale=0)
+            # PANEL 1: AUDIO REFERENSI
+            with gr.Group(elem_classes=["panel-card"]):
+              gr.HTML("""
+              <div class="panel-header">
+                <div class="badge-num">1</div>
+                <div>
+                  <h3 class="panel-heading">Sampel Suara Referensi</h3>
+                  <p class="panel-subheading">Unggah sampel vokal bersih durasi 2 - 20 detik</p>
+                </div>
+              </div>
+              """)
+              reference_audio = gr.Audio(sources=["upload","microphone"], type="filepath", label="Berkas Audio Referensi")
+              reference_transcript = gr.Textbox(
+                  label="Transkrip Persis Suara Referensi", 
+                  lines=3, 
+                  placeholder="Ketik persis kata-kata yang diucapkan pada sampel suara di atas..."
+              )
+
+            # PANEL 2: NASKAH TEKS TARGET
+            with gr.Group(elem_classes=["panel-card"]):
+              gr.HTML("""
+              <div class="panel-header">
+                <div class="badge-num">2</div>
+                <div>
+                  <h3 class="panel-heading">Naskah Teks yang Ingin Diucapkan</h3>
+                  <p class="panel-subheading">Pilih opsi teks sampel atau buat naskah Anda sendiri (Maks 500 Karakter)</p>
+                </div>
+              </div>
+              """)
+              
+              target_text = gr.Textbox(
+                  label="", 
+                  lines=6, 
+                  max_lines=10, 
+                  placeholder="Ketik atau pilih naskah teks di bawah ini..."
+              )
+              
+              gr.HTML("<div class='preset-label'>OPSI NASKAH SAMPE " + "L (±400 KARAKTER):</div>")
+              with gr.Row(elem_classes=["sample-btn-group"]):
+                sample_1 = gr.Button("📄 Narasi Storytelling (~400 Karakter)", elem_classes=["sample-btn"])
+                sample_2 = gr.Button("💡 Edukasi & Teknologi (~400 Karakter)", elem_classes=["sample-btn"])
+                sample_3 = gr.Button("💬 Percakapan Santai (~400 Karakter)", elem_classes=["sample-btn"])
+
+              with gr.Row(elem_classes=["sub-controls"]):
+                language = gr.Dropdown(choices=SUPPORTED_LANGUAGES, value="Indonesian", label="Bahasa Suara")
+                seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Variasi")
+                random_button = gr.Button("↻", elem_classes=["icon-btn-refresh"], scale=0)
+
+        # KOLOM KANAN: KONTROL KARAKTER & GENERASI OUTPUT
+        with gr.Column(scale=6, elem_classes=["column-panel"]):
             
-        with gr.Group(elem_classes=["glass-panel","step-panel"]):
-          gr.HTML("""
-          <div class="panel-head">
-            <div class="step-icon">03</div>
-            <div>
-              <div class="panel-kicker">PENGATURAN SUARA</div>
-              <div class="panel-title">Atur ekspresi & karakter</div>
-            </div>
-            <div class="panel-check">PRO AUDIO</div>
-          </div>
-          """)
-          gr.Markdown("<div class='micro-label'>PRESET KARAKTER</div>")
-          with gr.Row():
-            preset_nat = gr.Button("Alami", elem_classes=["preset-btn"])
-            preset_deep = gr.Button("Berat & Tenang", elem_classes=["preset-btn"])
-            preset_fast = gr.Button("Cepat", elem_classes=["preset-btn"])
-            preset_news = gr.Button("Formal", elem_classes=["preset-btn"])
-          with gr.Row():
-            output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan")
-            pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada (Pitch)")
-          reset_button = gr.Button("Riset Pengaturan", elem_classes=["ghost-btn"])
-          
-      with gr.Column(scale=5, elem_classes=["output-column"]):
-        with gr.Group(elem_classes=["output-card"]):
-          gr.HTML("""
-          <div class="output-top">
-            <div>
-              <div class="panel-kicker">04 · HASIL SUARA</div>
-              <div class="output-title">Hasil Kloning Suara</div>
-            </div>
-            <div class="render-badge"><span></span> HQ AUDIO</div>
-          </div>
-          <div class="render-visual">
-            <div class="render-glow"></div>
-            <div class="render-bars">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-            </div>
-            <div class="render-center">24<span>kHz</span></div>
-          </div>
-          """)
-          generate_button = gr.Button("Kloning Suara Sekarang  →", variant="primary", elem_classes=["generate-btn"])
-          generated_audio = gr.Audio(label="Pratinjau Suara", autoplay=False)
-          saved_path = gr.Textbox(label="Lokasi Berkas Master", interactive=False, elem_classes=["file-output"])
-          gr.HTML("""
-          <div class="output-note">
-            <span>⚡</span> CANGKEMANMU Voice Engine <span class="note-right">24kHz AUDIO HQ</span>
-          </div>
-          """)
-          
+            # PANEL 3: EXP PRESETS & KONTROL VOX
+            with gr.Group(elem_classes=["panel-card"]):
+              gr.HTML("""
+              <div class="panel-header">
+                <div class="badge-num">3</div>
+                <div>
+                  <h3 class="panel-heading">Pengaturan Karakter Vokal</h3>
+                  <p class="panel-subheading">Kustomisasi gaya, nada, dan kecepatan artikulasi</p>
+                </div>
+              </div>
+              """)
+              
+              gr.HTML("<div class='preset-label'>PRESET KARAKTER SUARA:</div>")
+              with gr.Row(elem_classes=["preset-row"]):
+                preset_nat = gr.Button("Alami", elem_classes=["preset-chip"])
+                preset_deep = gr.Button("Dalam & Tenang", elem_classes=["preset-chip"])
+                preset_fast = gr.Button("Cepat & Enerjik", elem_classes=["preset-chip"])
+                preset_news = gr.Button("Formal / Narasi", elem_classes=["preset-chip"])
+                
+              with gr.Row():
+                output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan Bicara")
+                pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Nada Suara (Pitch)")
+                
+              reset_button = gr.Button("Atur Ulang Kontrol Suara", elem_classes=["reset-link-btn"])
+
+            # PANEL 4: HASIL GENERASI & PLAYER
+            with gr.Group(elem_classes=["panel-card", "output-highlight"]):
+              gr.HTML("""
+              <div class="panel-header">
+                <div class="badge-num">4</div>
+                <div>
+                  <h3 class="panel-heading">Proses & Hasil Kloning Suara</h3>
+                  <p class="panel-subheading">Klik tombol di bawah untuk menghasilkan audio berkualitas tinggi</p>
+                </div>
+              </div>
+              """)
+              
+              generate_button = gr.Button("Kloning Suara Sekarang  →", variant="primary", elem_classes=["btn-generate-main"])
+              generated_audio = gr.Audio(label="Pemutar Pratinjau Suara", autoplay=False)
+              saved_path = gr.Textbox(label="Lokasi Berkas Audio Master", interactive=False, elem_classes=["file-path-box"])
+
+    # FOOTER
     gr.HTML("""
-    <div class="footer-line">
-      <span>CANGKEMANMU</span><span>·</span><span>BY RIFKY WIJAYANTO</span>
-      <span class="footer-right">STUDIO KLONING SUARA</span>
-    </div>
+    <footer class="studio-footer">
+      <div class="footer-content">
+        <span><b>CANGKEMANMU</b> — Premium Voice Cloning Studio</span>
+        <span>Crafted by <b>Rifky Wijayanto</b></span>
+      </div>
+    </footer>
     """)
-    
-    sample_1.click(lambda: "Selamat datang di CANGKEMANMU. Tempat terbaik untuk kloning suara dengan kualitas jernih dan presisi tinggi.", outputs=[target_text])
-    sample_2.click(lambda: "Teknologi kloning suara modern memungkinkan pembacaan teks dengan artikulasi yang sangat alami dan ekspresif.", outputs=[target_text])
-    sample_3.click(lambda: "Halo semuanya! Semoga hari Anda menyenangkan dan proyek audio Anda berjalan dengan lancar ya.", outputs=[target_text])
-    
-    preset_nat.click(lambda: set_voice_preset("Natural"), outputs=[output_speed, pitch_semitones])
-    preset_deep.click(lambda: set_voice_preset("Deep & Calm"), outputs=[output_speed, pitch_semitones])
-    preset_fast.click(lambda: set_voice_preset("Upbeat / Fast"), outputs=[output_speed, pitch_semitones])
-    preset_news.click(lambda: set_voice_preset("News Broadcaster"), outputs=[output_speed, pitch_semitones])
-    
+
+    # EVENT HANDLERS
+    sample_1.click(lambda: TEXT_OPTION_1, outputs=[target_text])
+    sample_2.click(lambda: TEXT_OPTION_2, outputs=[target_text])
+    sample_3.click(lambda: TEXT_OPTION_3, outputs=[target_text])
+
+    preset_nat.click(lambda: set_voice_preset("Alami"), outputs=[output_speed, pitch_semitones])
+    preset_deep.click(lambda: set_voice_preset("Dalam & Tenang"), outputs=[output_speed, pitch_semitones])
+    preset_fast.click(lambda: set_voice_preset("Cepat & Enerjik"), outputs=[output_speed, pitch_semitones])
+    preset_news.click(lambda: set_voice_preset("Formal / Narasi"), outputs=[output_speed, pitch_semitones])
+
     reset_button.click(reset_controls, inputs=[], outputs=[output_speed, pitch_semitones])
     random_button.click(random_seed, inputs=[], outputs=[seed])
-    
+
     generate_button.click(
         generate_voice,
         inputs=[target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones],
