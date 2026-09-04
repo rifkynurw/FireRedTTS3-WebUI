@@ -1,33 +1,36 @@
 import os
-import sys
 import time
 import math
 import random
-import traceback
-import gc
-import subprocess
-import tempfile
+import time
 from pathlib import Path
-from datetime import datetime
 
 import gradio as gr
-import numpy as np
-import soundfile as sf
-import torch
-import torchaudio
 
 ROOT_DIR = Path(os.environ["FIRERED_REPO_DIR"]).resolve()
-MODEL_DIR = Path(os.environ["FIRERED_MODEL_DIR"]).resolve()
 OUTPUT_DIR = Path(os.environ["FIRERED_OUTPUT_DIR"]).resolve()
 URL_FILE = Path(os.environ["FIRERED_URL_FILE"]).resolve()
-RUBBERBAND_HQ_BIN = Path(os.environ["FIRERED_RUBBERBAND_HQ_BIN"]).resolve()
-RUBBERBAND_LIB_DIR = Path(os.environ["FIRERED_RUBBERBAND_LIB_DIR"]).resolve()
-
+LOCAL_URL_FILE = Path(os.environ.get("FIRERED_LOCAL_URL_FILE", "/content/fireredtts3_webui.local.url")).resolve()
+PORT = int(os.environ.get("FIRERED_GRADIO_PORT", "7860"))
 MAX_TARGET_CHARS = int(os.environ.get("FIRERED_MAX_TARGET_CHARS", "500"))
 MIN_PROMPT_SECONDS = float(os.environ.get("FIRERED_MIN_PROMPT_SECONDS", "2.0"))
 MAX_PROMPT_SECONDS = float(os.environ.get("FIRERED_MAX_PROMPT_SECONDS", "20.0"))
-PORT = int(os.environ.get("FIRERED_GRADIO_PORT", "7860"))
 DEFAULT_SEED = int(os.environ.get("FIRERED_DEFAULT_SEED", "1986"))
+
+# Fix14 contract: the repository is UI-only. The notebook owns the stable backend.
+import sys
+sys.path.insert(0, str(ROOT_DIR))
+from fireredtts3_runtime.backend import (
+    SUPPORTED_LANGUAGES,
+    DEFAULT_SEED as BACKEND_DEFAULT_SEED,
+    MIN_OUTPUT_SPEED,
+    MAX_OUTPUT_SPEED,
+    MIN_PITCH_SEMITONES,
+    MAX_PITCH_SEMITONES,
+    generate_voice as backend_generate_voice,
+    random_seed,
+    reset_controls,
+)
 
 LANGUAGE_LABELS = {
     "Arabic": "Arab", "Cantonese": "Kanton", "Chinese": "Mandarin", "Czech": "Ceko",
@@ -37,190 +40,34 @@ LANGUAGE_LABELS = {
     "Portuguese": "Portugis", "Romanian": "Rumania", "Russian": "Rusia", "Spanish": "Spanyol",
     "Thai": "Thailand", "Turkish": "Turki", "Ukrainian": "Ukraina", "Vietnamese": "Vietnam",
 }
-SUPPORTED_LANGUAGES = list(LANGUAGE_LABELS.keys())
-LANGUAGE_CHOICES = [(LANGUAGE_LABELS[code], code) for code in SUPPORTED_LANGUAGES]
+LANGUAGE_CHOICES = [(LANGUAGE_LABELS.get(code, code), code) for code in SUPPORTED_LANGUAGES]
+DEFAULT_SEED = BACKEND_DEFAULT_SEED if BACKEND_DEFAULT_SEED is not None else DEFAULT_SEED
 
-sys.path.insert(0, str(ROOT_DIR))
-from fireredtts3.core import FireRedTTS3
-
-tts = FireRedTTS3(
-    str(MODEL_DIR),
-    use_wetext=True,
-    use_llm_tn=False,
-)
-
-if not torch.cuda.is_available():
-    raise RuntimeError("CUDA unavailable in WebUI process; CPU fallback is disabled.")
-
-MODEL_SR = 24000
-MIN_OUTPUT_SPEED = 0.85
-MAX_OUTPUT_SPEED = 1.15
-MIN_PITCH_SEMITONES = -2.0
-MAX_PITCH_SEMITONES = 2.0
-
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed % (2**32 - 1))
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-
-def validate_reference_audio(path):
+def _validate_reference_audio(path):
     if not path:
         raise gr.Error("Audio referensi belum dipilih.")
     p = Path(path)
-    if not p.is_file():
-        raise gr.Error("Audio referensi tidak ditemukan.")
-    if p.stat().st_size <= 0:
-        raise gr.Error("Audio referensi kosong.")
+    if not p.is_file() or p.stat().st_size <= 0:
+        raise gr.Error("Audio referensi tidak ditemukan atau kosong.")
     try:
+        import soundfile as sf
         info = sf.info(str(p))
-    except Exception as e:
-        raise gr.Error(f"Audio referensi tidak dapat dibaca: {e}")
-    if info.frames <= 0 or info.samplerate <= 0:
-        raise gr.Error("Metadata audio referensi tidak valid.")
-    duration = info.frames / float(info.samplerate)
+    except Exception as exc:
+        raise gr.Error(f"Audio referensi tidak dapat dibaca: {exc}")
+    duration = info.frames / float(info.samplerate) if info.samplerate else 0.0
     if duration < MIN_PROMPT_SECONDS:
-        raise gr.Error(
-            f"Audio referensi terlalu pendek ({duration:.2f} detik). "
-            f"Gunakan minimal {MIN_PROMPT_SECONDS:.1f} detik."
-        )
+        raise gr.Error(f"Audio referensi terlalu pendek ({duration:.2f} detik). Minimal {MIN_PROMPT_SECONDS:.1f} detik.")
     if duration > MAX_PROMPT_SECONDS:
-        raise gr.Error(
-            f"Audio referensi terlalu panjang ({duration:.2f} detik). "
-            f"Gunakan maksimal {MAX_PROMPT_SECONDS:.0f} detik."
-        )
-    return str(p), duration, int(info.samplerate)
-
-def prepare_reference_audio(path):
-    path, duration, sr = validate_reference_audio(path)
-    try:
-        waveform, loaded_sr = torchaudio.load(path)
-    except Exception as e:
-        raise gr.Error(f"Audio referensi gagal dimuat: {e}")
-    waveform = waveform.float()
-    if waveform.ndim == 1:
-        waveform = waveform.unsqueeze(0)
-    if waveform.ndim != 2 or waveform.shape[-1] <= 0:
-        raise gr.Error(f"Bentuk gelombang referensi tidak valid: {tuple(waveform.shape)}")
-    if waveform.shape[0] > 1:
-        waveform = waveform.mean(dim=0, keepdim=True)
-    if not torch.isfinite(waveform).all():
-        raise gr.Error("Audio referensi mengandung nilai tidak valid (NaN/Inf).")
-    return waveform.cpu(), int(loaded_sr), duration
-
-def validate_generated_audio(audio):
-    if not torch.is_tensor(audio):
-        audio = torch.as_tensor(audio)
-    audio = audio.detach().float().cpu()
-    if audio.ndim == 1:
-        audio = audio.unsqueeze(0)
-    if audio.ndim != 2 or audio.shape[-1] <= 0:
-        raise RuntimeError(f"Bentuk audio hasil tidak terduga: {tuple(audio.shape)}")
-    if not torch.isfinite(audio).all():
-        raise gr.Error("Audio hasil mengandung nilai tidak valid (NaN/Inf); tidak disimpan.")
-    peak = float(audio.abs().max().item())
-    if not math.isfinite(peak) or peak <= 0:
-        raise gr.Error("Audio hasil kosong atau tidak valid.")
-    if peak > 1.0:
-        audio = audio / peak * 0.999
-    return audio
-
-def _run_rubberband_hq(speed, pitch, input_path, output_path, sr):
-    env = os.environ.copy()
-    env["LD_LIBRARY_PATH"] = str(RUBBERBAND_LIB_DIR) + ":" + env.get("LD_LIBRARY_PATH", "")
-    cmd = [
-        str(RUBBERBAND_HQ_BIN), str(int(sr)), f"{float(speed):.8f}",
-        f"{float(pitch):.8f}", str(input_path), str(output_path),
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
-    if result.returncode != 0:
-        raise gr.Error(
-            "Rubber Band R3 HQ gagal.\n"
-            f"returncode={result.returncode}\n"
-            f"STDOUT:\n{result.stdout[-6000:]}\n"
-            f"STDERR:\n{result.stderr[-6000:]}"
-        )
-    return result
-
-def apply_voice_controls(audio_tensor, sr, speed, pitch):
-    speed = float(speed)
-    pitch = float(pitch)
-    if not MIN_OUTPUT_SPEED <= speed <= MAX_OUTPUT_SPEED:
-        raise gr.Error(f"Kecepatan harus antara {MIN_OUTPUT_SPEED:.2f}–{MAX_OUTPUT_SPEED:.2f}.")
-    if not MIN_PITCH_SEMITONES <= pitch <= MAX_PITCH_SEMITONES:
-        raise gr.Error(
-            f"Nada harus antara {MIN_PITCH_SEMITONES:+.0f} hingga {MAX_PITCH_SEMITONES:+.0f} semitone."
-        )
-    if not torch.is_tensor(audio_tensor):
-        audio_tensor = torch.as_tensor(audio_tensor)
-    x = audio_tensor.detach().float().cpu()
-    if x.ndim == 1:
-        x = x.unsqueeze(0)
-    if x.ndim != 2 or x.shape[0] != 1 or x.shape[-1] == 0:
-        raise gr.Error(f"Audio keluaran tidak valid untuk pengaturan suara: {tuple(x.shape)}")
-    if not torch.isfinite(x).all():
-        raise gr.Error("Audio keluaran mengandung nilai tidak valid (NaN/Inf).")
-    if abs(speed - 1.0) <= 1e-9 and abs(pitch) <= 1e-9:
-        return x.squeeze(0).numpy().astype(np.float32, copy=True)
-
-    waveform = x.squeeze(0).numpy().astype(np.float32, copy=False)
-    with tempfile.TemporaryDirectory(prefix="fireredtts3_rb_hq_", dir="/content") as tmpdir:
-        tmp = Path(tmpdir)
-        input_raw = tmp / "input.f32"
-        output_raw = tmp / "output.f32"
-        output_wav = tmp / "output.wav"
-        sf.write(str(tmp / "input.wav"), waveform, int(sr), subtype="FLOAT")
-        input_raw.write_bytes(waveform.tobytes(order="C"))
-        result = _run_rubberband_hq(speed, pitch, input_raw, output_raw, int(sr))
-        if result.stdout:
-            print("[Rubber Band R3 HQ]", result.stdout.strip(), flush=True)
-        if not output_raw.is_file() or output_raw.stat().st_size <= 0:
-            raise gr.Error("Rubber Band R3 HQ tidak menghasilkan keluaran float32.")
-        raw = np.fromfile(output_raw, dtype=np.float32)
-        if raw.size == 0 or not np.isfinite(raw).all():
-            raise gr.Error("Keluaran Rubber Band R3 HQ kosong atau mengandung nilai tidak valid.")
-        peak = float(np.max(np.abs(raw)))
-        if not math.isfinite(peak) or peak <= 0:
-            raise gr.Error("Keluaran Rubber Band R3 HQ tidak valid.")
-        if peak > 1.0:
-            raw = raw / peak * 0.999
-        sf.write(str(output_wav), raw, int(sr), subtype="FLOAT")
-        check, out_sr = sf.read(str(output_wav), dtype="float32", always_2d=True)
-        if int(out_sr) != int(sr) or check.ndim != 2 or check.shape[1] != 1:
-            raise gr.Error(f"Berkas WAV keluaran Rubber Band R3 HQ tidak valid/tidak mono: shape={check.shape}, sr={out_sr}")
-        check = check[:, 0]
-        if check.size == 0 or not np.isfinite(check).all():
-            raise gr.Error("Berkas WAV keluaran Rubber Band R3 HQ tidak valid setelah ditulis.")
-        return np.asarray(check, dtype=np.float32)
-
-def random_seed():
-    return random.randint(1, 2147483647)
-
-def reset_controls():
-    return 1.0, 0.0
-
-def set_voice_preset(preset_type):
-    if preset_type == "Alami":
-        return 1.0, 0.0
-    elif preset_type == "Dalam & Tenang":
-        return 0.96, -1.0
-    elif preset_type == "Ceria":
-        return 1.06, +0.5
-    elif preset_type == "Berita":
-        return 0.98, -0.5
-    return 1.0, 0.0
+        raise gr.Error(f"Audio referensi terlalu panjang ({duration:.2f} detik). Maksimal {MAX_PROMPT_SECONDS:.0f} detik.")
+    return duration, int(info.samplerate)
 
 def describe_reference_audio(path):
     if not path:
         return "Unggah klip referensi untuk memulai."
     try:
-        _, duration, sr = validate_reference_audio(path)
-    except gr.Error as e:
-        return str(e)
-    except Exception as e:
-        return f"Berkas tidak dapat dibaca: {e}"
+        duration, sr = _validate_reference_audio(path)
+    except gr.Error as exc:
+        return str(exc)
     return f"Terekam {duration:.1f} detik pada {sr:,} Hz — siap dikloning."
 
 def describe_char_count(text):
@@ -231,91 +78,32 @@ def describe_char_count(text):
         return f"{n} karakter — kelebihan {n - MAX_TARGET_CHARS} dari batas."
     return f"{n} dari {MAX_TARGET_CHARS} karakter."
 
-def generate_voice(
-    target_text,
-    reference_transcript,
-    reference_audio,
-    language,
-    seed,
-    output_speed,
-    pitch_semitones,
-):
-    try:
-        t0 = time.time()
-        target_text = (target_text or "").strip()
-        reference_transcript = (reference_transcript or "").strip()
-        if not target_text:
-            raise gr.Error("Naskah masih kosong.")
-        if not reference_transcript:
-            raise gr.Error("Transkrip referensi masih kosong. Isi PERSIS ucapan pada audio referensi.")
-        if len(target_text) > MAX_TARGET_CHARS:
-            raise gr.Error(
-                f"Naskah terlalu panjang ({len(target_text)} karakter); maksimum {MAX_TARGET_CHARS}."
-            )
-        if language not in SUPPORTED_LANGUAGES:
-            raise gr.Error(f"Bahasa tidak didukung: {language}")
+def set_voice_preset(preset_type):
+    return {
+        "Alami": (1.0, 0.0),
+        "Dalam & Tenang": (0.96, -1.0),
+        "Ceria": (1.06, +0.5),
+        "Berita": (0.98, -0.5),
+    }.get(preset_type, (1.0, 0.0))
 
-        seed = int(seed)
-        speed = float(output_speed)
-        pitch = float(pitch_semitones)
-
-        prompt_audio, prompt_audio_sr, duration = prepare_reference_audio(reference_audio)
-        set_seed(seed)
-
-        print(
-            f"[INFO] language={language} prompt_duration={duration:.2f}s "
-            f"prompt_sr={prompt_audio_sr} seed={seed} "
-            f"speed={speed:.2f} pitch={pitch:+.1f}st",
-            flush=True,
-        )
-
-        with torch.inference_mode():
-            gen_audio, gen_audio_sr = tts.generate(
-                language=language,
-                prompt_text=reference_transcript,
-                prompt_audio=prompt_audio,
-                prompt_audio_sr=prompt_audio_sr,
-                text=target_text,
-                n_timesteps=10,
-                inference_cfg=2.0,
-                seed=seed,
-                do_tn=True,
-            )
-
-        audio = validate_generated_audio(gen_audio)
-        processed = apply_voice_controls(audio, int(gen_audio_sr), speed, pitch)
-
-        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        safe_speed = f"{speed:.2f}"
-        safe_pitch = f"{pitch:+.1f}".replace("+", "p").replace("-", "m")
-        out_path = OUTPUT_DIR / (
-            f"cangkeman_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
-            f"_spd{safe_speed}_pit{safe_pitch}st.wav"
-        )
-        master_path = out_path.with_name(out_path.stem + "_HQ_FLOAT32.wav")
-        pcm16_path = out_path.with_name(out_path.stem + "_PCM16.wav")
-        sf.write(str(master_path), processed, int(gen_audio_sr), subtype="FLOAT")
-        sf.write(str(pcm16_path), processed, int(gen_audio_sr), subtype="PCM_16")
-
-        elapsed = time.time() - t0
-        duration_out = processed.shape[-1] / float(gen_audio_sr)
-        bahasa_label = LANGUAGE_LABELS.get(language, language)
-        summary = (
-            f"**{duration_out:.1f} detik** audio pada **{int(gen_audio_sr):,} Hz**, "
-            f"selesai dirender dalam {elapsed:.1f} detik.\n\n"
-            f"Bahasa {bahasa_label} · seed {seed} · kecepatan {speed:.2f}x · nada {pitch:+.1f}st"
-        )
-        return (int(gen_audio_sr), processed), summary, [str(master_path), str(pcm16_path)]
-
-    except gr.Error:
-        raise
-    except Exception as e:
-        traceback.print_exc()
-        raise gr.Error(f"Proses inferensi FireRedTTS3 gagal: {type(e).__name__}: {e}")
-    finally:
-        gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+def generate_voice_ui(target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones):
+    started = time.time()
+    audio_result, master_path = backend_generate_voice(
+        target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones
+    )
+    sample_rate, audio = audio_result
+    duration = audio.shape[-1] / float(sample_rate)
+    master = Path(master_path)
+    pcm = master.with_name(master.name.replace("_HQ_FLOAT32.wav", "_PCM16.wav"))
+    files = [str(p) for p in (master, pcm) if p.is_file()]
+    language_label = LANGUAGE_LABELS.get(language, language)
+    elapsed = time.time() - started
+    summary = (
+        f"**{duration:.1f} detik** audio pada **{int(sample_rate):,} Hz**, "
+        f"selesai dirender dalam {elapsed:.1f} detik.\n\n"
+        f"Bahasa {language_label} · seed {int(seed)} · kecepatan {float(output_speed):.2f}x · nada {float(pitch_semitones):+.1f}st"
+    )
+    return audio_result, summary, files
 
 APP_DIR = Path(__file__).resolve().parent
 THEME_CSS_FILE = APP_DIR / "theme.css"
@@ -379,33 +167,29 @@ with gr.Blocks(title="Cangkeman — Ruang Kerja Suara", css=css, theme=gr.themes
     random_button.click(random_seed, inputs=[], outputs=[seed])
     reference_audio.change(describe_reference_audio, inputs=[reference_audio], outputs=[ref_status])
     target_text.change(describe_char_count, inputs=[target_text], outputs=[char_counter])
-    generate_button.click(generate_voice, inputs=[target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones], outputs=[generated_audio, generation_summary, output_files])
+    generate_button.click(generate_voice_ui, inputs=[target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones], outputs=[generated_audio, generation_summary, output_files])
 
 demo.queue(max_size=4, default_concurrency_limit=1)
 
+# Fix14: do not create a Gradio public share tunnel here. The notebook owns public access.
 launch_result = demo.launch(
     server_name="0.0.0.0",
     server_port=PORT,
-    share=True,
+    share=False,
     show_error=True,
     prevent_thread_lock=True,
-    # Allow Gradio to serve files generated in the Google Drive output folder.
-    # Without this, gr.File may reject/move the WAV from outside Gradio's
-    # working/cache directories.
     allowed_paths=[str(OUTPUT_DIR)],
 )
 
 try:
-    _, local_url, share_url = launch_result
+    _, local_url, _ = launch_result
 except Exception:
-    local_url, share_url = None, None
+    local_url = None
 
-selected_url = share_url or local_url
-if selected_url:
-    URL_FILE.write_text(str(selected_url), encoding="utf-8")
-    print("FIREREDTTS3_WEBUI_URL:", selected_url, flush=True)
-else:
-    print("FIREREDTTS3_WEBUI_URL: unavailable", flush=True)
+selected_url = local_url or f"http://127.0.0.1:{PORT}"
+LOCAL_URL_FILE.write_text(str(selected_url), encoding="utf-8")
+print("FIREREDTTS3_WEBUI_LOCAL_URL:", selected_url, flush=True)
+print("FIREREDTTS3_WEBUI_PUBLIC_URL: notebook will provide Colab proxy URL", flush=True)
 
 while True:
     time.sleep(3600)
