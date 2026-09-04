@@ -1,4 +1,3 @@
-
 import os
 import sys
 import time
@@ -8,7 +7,6 @@ import traceback
 import gc
 import subprocess
 import tempfile
-import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -125,32 +123,6 @@ def validate_generated_audio(audio):
         audio = audio / peak * 0.999
     return audio
 
-def _run_rubberband(cmd):
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            check=False,
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise gr.Error(
-            "Rubber Band timeout setelah 120 detik. Coba kalimat yang lebih pendek."
-        ) from exc
-
-    if result.returncode != 0:
-        stdout = (result.stdout or "").strip()
-        stderr = (result.stderr or "").strip()
-        raise gr.Error(
-            f"Rubber Band gagal (returncode={result.returncode}).\n"
-            f"COMMAND: {' '.join(cmd)}\n"
-            f"STDOUT:\n{stdout[-2500:]}\n"
-            f"STDERR:\n{stderr[-3500:]}"
-        )
-    return result
-
-
 def _run_rubberband_hq(speed, pitch, input_path, output_path, sr):
     env = os.environ.copy()
     env["LD_LIBRARY_PATH"] = str(RUBBERBAND_LIB_DIR) + ":" + env.get("LD_LIBRARY_PATH", "")
@@ -167,7 +139,6 @@ def _run_rubberband_hq(speed, pitch, input_path, output_path, sr):
             f"STDERR:\n{result.stderr[-6000:]}"
         )
     return result
-
 
 def apply_voice_controls(audio_tensor, sr, speed, pitch):
     speed = float(speed)
@@ -226,6 +197,17 @@ def random_seed():
 def reset_controls():
     return 1.0, 0.0
 
+def set_voice_preset(preset_type):
+    if preset_type == "Natural":
+        return 1.0, 0.0
+    elif preset_type == "Deep & Calm":
+        return 0.96, -1.0
+    elif preset_type == "Upbeat / Fast":
+        return 1.06, +0.5
+    elif preset_type == "News Broadcaster":
+        return 0.98, -0.5
+    return 1.0, 0.0
+
 def generate_voice(
     target_text,
     reference_transcript,
@@ -263,7 +245,6 @@ def generate_voice(
             flush=True,
         )
 
-        # Explicit known-good model-side baseline.
         with torch.inference_mode():
             gen_audio, gen_audio_sr = tts.generate(
                 language=language,
@@ -308,89 +289,134 @@ THEME_CSS_FILE = APP_DIR / "theme.css"
 css = THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
 with gr.Blocks(title="FireRed Studio — Rifky Wijayanto", css=css, theme=gr.themes.Soft()) as demo:
+    # Hero Banner
     gr.HTML(
-        """<div class="hero">
-          <div class="brand">FIRERED STUDIO</div>
-          <div class="title">Indonesian Voice Cloning</div>
-          <div class="subtitle">Natural zero-shot voice cloning with FireRedTTS3-Base and Rubber Band R3 HQ post-processing.</div>
-          <div class="credit">Created &amp; branded by <b>Rifky Wijayanto</b> &nbsp;·&nbsp; <span class="badge">T4 Ready</span> <span class="badge">Rubber Band R3 HQ</span></div>
+        """<div class="hero-card">
+          <div class="hero-brand">FIRERED STUDIO PRO</div>
+          <div class="hero-title">Zero-Shot Indonesian Voice Cloning</div>
+          <div class="hero-subtitle">Teknologi sintesis suara presisi tinggi bertenaga FireRedTTS3-Base & Rubber Band R3 HQ DSP Engine.</div>
+          <div class="badge-container">
+            <span class="badge">🎙️ Rifky Wijayanto Studio</span>
+            <span class="badge badge-cyan">⚡ T4 GPU Accelerated</span>
+            <span class="badge">🎛️ Rubber Band R3 HQ</span>
+          </div>
         </div>"""
     )
 
-    gr.Markdown("### 1 · Create the voice", elem_classes=["section"])
-    with gr.Row():
-        with gr.Column(scale=1):
-            reference_audio = gr.Audio(
-                sources=["upload", "microphone"],
-                type="filepath",
-                label="Reference Audio",
-            )
-            gr.Markdown("Gunakan 5–15 detik, 1 speaker, suara jelas, noise dan reverb rendah.")
-        with gr.Column(scale=1):
-            reference_transcript = gr.Textbox(
-                label="Reference Transcript",
-                lines=5,
-                placeholder="RIFKY.WIJAYANTO - Masukkan PERSIS ucapan pada reference audio.",
-            )
+    with gr.Row(equal_height=False):
+        # Left Panel (Controls & Inputs)
+        with gr.Column(scale=3):
+            # Step 1: Voice Source
+            with gr.Group(elem_classes=["glass-panel"]):
+                gr.HTML('<div class="section-header"><span class="step-badge">1</span> Sumber Suara Acuan (Voice Sample)</div>')
+                with gr.Row():
+                    reference_audio = gr.Audio(
+                        sources=["upload", "microphone"],
+                        type="filepath",
+                        label="Audio Referensi (5–15 Detik)",
+                    )
+                    reference_transcript = gr.Textbox(
+                        label="Transkrip Tepat Reference Audio",
+                        lines=4,
+                        placeholder="Ketik PERSIS kata-kata yang diucapkan dalam audio referensi...",
+                    )
 
-    gr.Markdown("### 2 · Write your script", elem_classes=["section"])
-    target_text = gr.Textbox(
-        label="Text to Speech",
-        lines=5,
-        max_lines=8,
-        placeholder="Tulis teks Bahasa Indonesia yang ingin dibacakan.",
+            # Step 2: Target Script
+            with gr.Group(elem_classes=["glass-panel"]):
+                gr.HTML('<div class="section-header"><span class="step-badge">2</span> Skrip Naskah Baru</div>')
+                target_text = gr.Textbox(
+                    label="Teks yang Akan Diucapkan (TTS)",
+                    lines=4,
+                    max_lines=6,
+                    placeholder="Tuliskan kalimat Bahasa Indonesia yang ingin disintesiskan ke dalam suara baru...",
+                )
+                
+                # Interactive Text Samples
+                gr.Markdown("<small style='opacity:0.7;'> Contoh Cepat Naskah:</small>")
+                with gr.Row():
+                    sample_1 = gr.Button("📢 Sambutan", elem_classes=["preset-btn"])
+                    sample_2 = gr.Button("🎙️ Berita Tech", elem_classes=["preset-btn"])
+                    sample_3 = gr.Button("💬 Santai", elem_classes=["preset-btn"])
+
+                with gr.Row():
+                    language = gr.Dropdown(
+                        choices=SUPPORTED_LANGUAGES,
+                        value="Indonesian",
+                        label="Target Bahasa",
+                    )
+                    seed = gr.Number(
+                        value=DEFAULT_SEED,
+                        precision=0,
+                        label="Inference Seed",
+                    )
+                    random_button = gr.Button("🎲 Random Seed", elem_classes=["preset-btn"])
+
+            # Step 3: Voice Tuning
+            with gr.Group(elem_classes=["glass-panel"]):
+                gr.HTML('<div class="section-header"><span class="step-badge">3</span> Tuning Suara (DSP HQ)</div>')
+                
+                # Quick Preset Buttons
+                gr.Markdown("<small style='opacity:0.7;'> Preset Suara Cepat:</small>")
+                with gr.Row():
+                    preset_nat = gr.Button("✨ Natural (1.0x / 0st)", elem_classes=["preset-btn"])
+                    preset_deep = gr.Button("🎙️ Deep (0.96x / -1.0st)", elem_classes=["preset-btn"])
+                    preset_fast = gr.Button("⚡ Upbeat (1.06x / +0.5st)", elem_classes=["preset-btn"])
+                    preset_news = gr.Button("📰 News (0.98x / -0.5st)", elem_classes=["preset-btn"])
+
+                with gr.Row():
+                    output_speed = gr.Slider(
+                        minimum=MIN_OUTPUT_SPEED,
+                        maximum=MAX_OUTPUT_SPEED,
+                        value=1.0,
+                        step=0.01,
+                        label="Kecepatan Bicara (Speed)",
+                    )
+                    pitch_semitones = gr.Slider(
+                        minimum=MIN_PITCH_SEMITONES,
+                        maximum=MAX_PITCH_SEMITONES,
+                        value=0.0,
+                        step=0.5,
+                        label="Niti / Tinggi Nada (Pitch)",
+                    )
+                reset_button = gr.Button("🔄 Reset Audio Controls", elem_classes=["preset-btn"])
+
+        # Right Panel (Output & Preview)
+        with gr.Column(scale=2):
+            with gr.Group(elem_classes=["glass-panel"]):
+                gr.HTML('<div class="section-header"><span class="step-badge">4</span> Hasil Sintesis Suara</div>')
+                
+                generate_button = gr.Button(
+                    "🚀 Hasilkan Suara Klona", 
+                    variant="primary", 
+                    elem_classes=["generate-btn"]
+                )
+                
+                gr.Markdown("---")
+                generated_audio = gr.Audio(label="Audio Output (HQ Preview)", autoplay=False)
+                saved_path = gr.Textbox(label="Lokasi Penyimpanan Master File (.wav)", interactive=False)
+
+    # Event Handlers & Interactions
+    sample_1.click(
+        lambda: "Selamat datang di FireRed Studio. Suara ini dikloning secara presisi menggunakan teknologi AI terbaru.",
+        outputs=[target_text]
     )
-    language = gr.Dropdown(
-        choices=SUPPORTED_LANGUAGES,
-        value="Indonesian",
-        label="Target Language",
-        info="Untuk target utama gunakan Indonesian.",
+    sample_2.click(
+        lambda: "Perkembangan kecerdasan buatan dalam pemrosesan audio kini memungkinkan pembacaan teks dengan artikulasi yang sangat alami.",
+        outputs=[target_text]
     )
-    seed = gr.Number(
-        value=DEFAULT_SEED,
-        precision=0,
-        label="Inference Seed",
-        info="Pertahankan seed saat membandingkan controls.",
+    sample_3.click(
+        lambda: "Halo semuanya! Semoga hari kalian menyenangkan dan proyek audio kalian berjalan dengan lancar ya.",
+        outputs=[target_text]
     )
 
-    gr.Markdown("### 3 · Voice controls", elem_classes=["section"])
-    with gr.Accordion("Speed / Pitch", open=True):
-        with gr.Row():
-            output_speed = gr.Slider(
-                minimum=MIN_OUTPUT_SPEED,
-                maximum=MAX_OUTPUT_SPEED,
-                value=1.0,
-                step=0.01,
-                label="Speed",
-                info="1.00× = original; 0.98× / 0.97× = sedikit lebih lambat. Rubber Band R3 HQ digunakan.",
-            )
-            pitch_semitones = gr.Slider(
-                minimum=MIN_PITCH_SEMITONES,
-                maximum=MAX_PITCH_SEMITONES,
-                value=0.0,
-                step=0.5,
-                label="Pitch",
-                info="0 = original; + lebih tinggi; − lebih rendah.",
-            )
-        gr.Markdown(
-            "**Intonation:** dipertahankan dari model. Tidak ada contour post-processing otomatis."
-        )
-        reset_button = gr.Button("Reset Voice Controls")
+    preset_nat.click(lambda: set_voice_preset("Natural"), outputs=[output_speed, pitch_semitones])
+    preset_deep.click(lambda: set_voice_preset("Deep & Calm"), outputs=[output_speed, pitch_semitones])
+    preset_fast.click(lambda: set_voice_preset("Upbeat / Fast"), outputs=[output_speed, pitch_semitones])
+    preset_news.click(lambda: set_voice_preset("News Broadcaster"), outputs=[output_speed, pitch_semitones])
 
-    with gr.Row():
-        random_button = gr.Button("🎲 Randomize Seed")
-        generate_button = gr.Button("Generate Voice", variant="primary", elem_classes=["generate-btn"])
-
-    gr.Markdown("### 4 · Result", elem_classes=["section"])
-    generated_audio = gr.Audio(label="Generated Audio", autoplay=False)
-    saved_path = gr.Textbox(label="Saved HQ WAV Path", interactive=False)
-
-    reset_button.click(
-        reset_controls,
-        inputs=[],
-        outputs=[output_speed, pitch_semitones],
-    )
+    reset_button.click(reset_controls, inputs=[], outputs=[output_speed, pitch_semitones])
     random_button.click(random_seed, inputs=[], outputs=[seed])
+    
     generate_button.click(
         generate_voice,
         inputs=[
