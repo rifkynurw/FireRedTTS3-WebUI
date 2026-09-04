@@ -88,8 +88,9 @@ def set_voice_preset(preset_type):
 
 def generate_voice_ui(target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones):
     started = time.time()
+    pitch_value = float(pitch_semitones)
     audio_result, master_path = backend_generate_voice(
-        target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_semitones
+        target_text, reference_transcript, reference_audio, language, seed, output_speed, pitch_value
     )
     sample_rate, audio = audio_result
     duration = audio.shape[-1] / float(sample_rate)
@@ -101,7 +102,7 @@ def generate_voice_ui(target_text, reference_transcript, reference_audio, langua
     summary = (
         f"**{duration:.1f} detik** audio pada **{int(sample_rate):,} Hz**, "
         f"selesai dirender dalam {elapsed:.1f} detik.\n\n"
-        f"Bahasa {language_label} · seed {int(seed)} · kecepatan {float(output_speed):.2f}x · nada {float(pitch_semitones):+.1f}st"
+        f"Bahasa {language_label} · seed {int(seed)} · kecepatan {float(output_speed):.2f}x · nada {pitch_value:+.1f}st"
     )
     return audio_result, summary, files
 
