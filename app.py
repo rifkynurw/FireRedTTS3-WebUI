@@ -182,14 +182,18 @@ launch_result = demo.launch(
 )
 
 try:
-    _, local_url, _ = launch_result
+    _, local_url, share_url = launch_result
 except Exception:
-    local_url = None
+    local_url, share_url = None, None
 
-selected_url = local_url or f"http://127.0.0.1:{PORT}"
-LOCAL_URL_FILE.write_text(str(selected_url), encoding="utf-8")
-print("FIREREDTTS3_WEBUI_LOCAL_URL:", selected_url, flush=True)
-print("FIREREDTTS3_WEBUI_PUBLIC_URL: notebook will provide Colab proxy URL", flush=True)
+if local_url:
+    LOCAL_URL_FILE.write_text(str(local_url), encoding="utf-8")
+    print("FIREREDTTS3_WEBUI_LOCAL_URL:", local_url, flush=True)
+if share_url:
+    URL_FILE.write_text(str(share_url), encoding="utf-8")
+    print("FIREREDTTS3_WEBUI_PUBLIC_URL:", share_url, flush=True)
+else:
+    print("FIREREDTTS3_WEBUI_PUBLIC_URL: unavailable", flush=True)
 
 while True:
     time.sleep(3600)
