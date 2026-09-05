@@ -217,7 +217,7 @@ if share_url:
 else:
     print("FIREREDTTS3_WEBUI_PUBLIC_URL: unavailable",flush=True)
 
-# Fix26.7: Base preload runs in a background thread while the WebUI remains available.
+# Fix26.8: Base preload runs in a background thread while the WebUI remains available.
 print("[MODEL] Base preload scheduled in background; local model cache is active.", flush=True)
 
 while True:
