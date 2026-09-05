@@ -5,7 +5,7 @@ import random
 import time
 from pathlib import Path
 
-import gradio as gra
+import gradio as gr
 
 ROOT_DIR = Path(os.environ["FIRERED_REPO_DIR"]).resolve()
 OUTPUT_DIR = Path(os.environ["FIRERED_OUTPUT_DIR"]).resolve()
