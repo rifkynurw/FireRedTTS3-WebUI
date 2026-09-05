@@ -199,6 +199,9 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
         outputs=[generated_audio,generation_summary,output_files],
     )
 
+import threading
+threading.Thread(target=backend.preload_model, name="fireredtts3-base-preload", daemon=True).start()
+
 demo.queue(max_size=4,default_concurrency_limit=1)
 launch_result=demo.launch(server_name="0.0.0.0",server_port=PORT,share=True,show_error=True,prevent_thread_lock=True,allowed_paths=[str(OUTPUT_DIR)],css=css,theme=gr.themes.Soft())
 try:
@@ -214,9 +217,8 @@ if share_url:
 else:
     print("FIREREDTTS3_WEBUI_PUBLIC_URL: unavailable",flush=True)
 
-# Fix26.3: keep the public interface alive and lazy-load models on demand.
-# This preserves the known-good Fix25 behavior and avoids startup GPU/thread contention.
-print("[MODEL] Lazy-load mode enabled; model loads on first Generate.", flush=True)
+# Fix26.7: Base preload runs in a background thread while the WebUI remains available.
+print("[MODEL] Base preload scheduled in background; local model cache is active.", flush=True)
 
 while True:
     time.sleep(3600)
