@@ -84,7 +84,7 @@ def select_mode(mode):
         gr.update(value="Voice cloning" if is_clone else "Voice design"),
     )
 
-def generate_dispatch(mode,target_text,reference_audio,reference_transcript,language,seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps):
+def generate_dispatch(mode,target_text,reference_audio,reference_transcript,language,seed,design_seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps):
     started=time.time()
     if mode=="cloning":
         audio_result,master_path=generate_voice(target_text,reference_transcript,reference_audio,language,seed,output_speed,pitch_semitones)
@@ -94,7 +94,7 @@ def generate_dispatch(mode,target_text,reference_audio,reference_transcript,lang
         summary=(f"**{duration:.1f} detik** · {int(sr):,} Hz · "
                  f"Voice Cloning · seed {int(seed)} · speed {float(output_speed):.2f}x · pitch {float(pitch_semitones):+.1f}st")
         return audio_result,summary,files
-    audio_result,master_path,voice_plan,instruction=generate_voice_design(target_text,gender,age,timbre,accent,style,custom_instruction,seed,design_cfg,design_steps)
+    audio_result,master_path,voice_plan,instruction=generate_voice_design(target_text,gender,age,timbre,accent,style,custom_instruction,design_seed,design_cfg,design_steps)
     sr,audio=audio_result
     duration=audio.shape[-1]/float(sr)
     files=[str(p) for p in [Path(master_path),Path(master_path).with_name(Path(master_path).name.replace("_HQ_FLOAT32.wav","_PCM16.wav"))] if p.is_file()]
@@ -107,7 +107,7 @@ APP_DIR=Path(__file__).resolve().parent
 THEME_CSS_FILE=APP_DIR/"theme.css"
 css=THEME_CSS_FILE.read_text(encoding="utf-8") if THEME_CSS_FILE.is_file() else ""
 
-with gr.Blocks(title="Cangkeman — AI Voice Studio",css=css,theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
     mode_state=gr.State("cloning")
     active_title=gr.Markdown("🎙 **Voice Cloning**",elem_classes=["mode-chip"])
     active_subtitle=gr.Markdown("",visible=False)
@@ -129,7 +129,7 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio",css=css,theme=gr.themes.Sof
             char_counter=gr.Markdown(f"Maksimal {MAX_TARGET_CHARS} karakter.",elem_classes=["field-hint","char-counter"])
             generate_btn=gr.Button("Generate Speech",variant="primary",elem_classes=["generate-btn"])
             gr.Markdown("Output",elem_classes=["eyebrow","output-heading"])
-            generated_audio=gr.Audio(label="",autoplay=False,show_download_button=True,elem_classes=["output-audio"])
+            generated_audio=gr.Audio(label="",autoplay=False,elem_classes=["output-audio"])
             generation_summary=gr.Markdown("Belum ada hasil — isi teks lalu Generate Speech.",elem_classes=["summary-box"])
             output_files=gr.File(label="Export",file_count="multiple",elem_classes=["file-output"])
 
@@ -183,12 +183,12 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio",css=css,theme=gr.themes.Sof
     target_text.change(describe_char_count,inputs=[target_text],outputs=[char_counter])
     generate_btn.click(
         generate_dispatch,
-        inputs=[mode_state,target_text,reference_audio,reference_transcript,language,seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps],
+        inputs=[mode_state,target_text,reference_audio,reference_transcript,language,seed,design_seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps],
         outputs=[generated_audio,generation_summary,output_files],
     )
 
 demo.queue(max_size=4,default_concurrency_limit=1)
-launch_result=demo.launch(server_name="0.0.0.0",server_port=PORT,share=True,show_error=True,prevent_thread_lock=True,allowed_paths=[str(OUTPUT_DIR)])
+launch_result=demo.launch(server_name="0.0.0.0",server_port=PORT,share=True,show_error=True,prevent_thread_lock=True,allowed_paths=[str(OUTPUT_DIR)],css=css,theme=gr.themes.Soft())
 try:
     _,local_url,share_url=launch_result
 except Exception:
