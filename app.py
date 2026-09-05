@@ -82,10 +82,7 @@ def select_mode(mode):
         gr.update(visible=not is_clone),
         gr.update(value="🎙 Voice Cloning" if is_clone else "🎨 Voice Design"),
         gr.update(value="Voice cloning" if is_clone else "Voice design"),
-        gr.update(variant="primary" if is_clone else "secondary"),
-        gr.update(variant="primary" if not is_clone else "secondary"),
     )
-
 def generate_dispatch(mode,target_text,reference_audio,reference_transcript,language,seed,design_seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps):
     started=time.time()
     if mode=="cloning":
@@ -119,8 +116,14 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
         with gr.Column(scale=0, min_width=190, elem_classes=["nav-col"]):
             gr.HTML("""<div class='brand'><div class='brand-mark'>C</div><div><div class='brand-name'>Cangkeman</div><div class='brand-tag'>AI Voice Studio</div></div></div>""")
             gr.Markdown("TOOLS",elem_classes=["nav-caption"])
-            clone_btn=gr.Button("🎙  Voice Cloning",variant="primary",elem_classes=["nav-btn"])
-            design_btn=gr.Button("🎨  Voice Design",variant="secondary",elem_classes=["nav-btn"])
+            mode_nav=gr.Radio(
+                choices=["🎙  Voice Cloning","🎨  Voice Design"],
+                value="🎙  Voice Cloning",
+                label=None,
+                show_label=False,
+                container=False,
+                elem_classes=["mode-nav"],
+            )
             gr.Markdown("",elem_classes=["nav-spacer"])
             gr.Markdown("FireRedTTS3 · T4",elem_classes=["nav-foot"])
 
@@ -174,15 +177,14 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                 design_seed=gr.Number(value=DEFAULT_SEED,precision=0,label="Seed")
                 gr.Markdown("FireRedTTS3-Instruct membuat voice baru dari deskripsi, tanpa reference audio.",elem_classes=["field-hint"])
 
-    clone_btn.click(
-        lambda: ("cloning", *select_mode("cloning")),
-        inputs=[],
-        outputs=[mode_state,clone_panel,design_panel,active_title,active_subtitle,clone_btn,design_btn],
-    )
-    design_btn.click(
-        lambda: ("design", *select_mode("design")),
-        inputs=[],
-        outputs=[mode_state,clone_panel,design_panel,active_title,active_subtitle,clone_btn,design_btn],
+    def _nav_changed(label):
+        mode = "cloning" if (label or "").startswith("🎙") else "design"
+        return (mode, *select_mode(mode))
+
+    mode_nav.change(
+        _nav_changed,
+        inputs=[mode_nav],
+        outputs=[mode_state,clone_panel,design_panel,active_title,active_subtitle],
     )
     preset_nat.click(lambda:set_clone_preset("Alami"),outputs=[output_speed,pitch_semitones])
     preset_deep.click(lambda:set_clone_preset("Dalam & Tenang"),outputs=[output_speed,pitch_semitones])
@@ -212,18 +214,9 @@ if share_url:
 else:
     print("FIREREDTTS3_WEBUI_PUBLIC_URL: unavailable",flush=True)
 
-# Start the heavy Base preload only after Gradio has a live public interface.
-# This prevents model-loading work from competing with Gradio startup.
-try:
-    import threading
-    threading.Thread(
-        target=backend.preload_model,
-        name="fireredtts3-base-preload-after-gradio",
-        daemon=True,
-    ).start()
-    print("[MODEL] Background preload scheduled after Gradio startup.", flush=True)
-except Exception as exc:
-    print(f"[MODEL] Could not schedule Base preload: {type(exc).__name__}: {exc}", flush=True)
+# Fix26.3: keep the public interface alive and lazy-load models on demand.
+# This preserves the known-good Fix25 behavior and avoids startup GPU/thread contention.
+print("[MODEL] Lazy-load mode enabled; model loads on first Generate.", flush=True)
 
 while True:
     time.sleep(3600)
