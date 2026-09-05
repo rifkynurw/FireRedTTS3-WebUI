@@ -83,7 +83,7 @@ def select_mode(mode):
         gr.update(value="🎙 Voice Cloning" if is_clone else "🎨 Voice Design"),
         gr.update(value="Voice cloning" if is_clone else "Voice design"),
     )
-def generate_dispatch(mode,target_text,reference_audio,reference_transcript,language,seed,design_seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps):
+def generate_dispatch(mode,target_text,reference_audio,reference_transcript,language,seed,design_seed,design_language,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps):
     started=time.time()
     if mode=="cloning":
         audio_result,master_path=generate_voice(target_text,reference_transcript,reference_audio,language,seed,output_speed,pitch_semitones)
@@ -93,12 +93,12 @@ def generate_dispatch(mode,target_text,reference_audio,reference_transcript,lang
         summary=(f"**{duration:.1f} detik** · {int(sr):,} Hz · "
                  f"Voice Cloning · seed {int(seed)} · speed {float(output_speed):.2f}x · pitch {float(pitch_semitones):+.1f}st")
         return audio_result,summary,files
-    audio_result,master_path,voice_plan,instruction=generate_voice_design(target_text,gender,age,timbre,accent,style,custom_instruction,design_seed,design_cfg,design_steps)
+    audio_result,master_path,voice_plan,instruction=generate_voice_design(target_text,design_language,gender,age,timbre,accent,style,custom_instruction,design_seed,design_cfg,design_steps)
     sr,audio=audio_result
     duration=audio.shape[-1]/float(sr)
     files=[str(p) for p in [Path(master_path),Path(master_path).with_name(Path(master_path).name.replace("_HQ_FLOAT32.wav","_PCM16.wav"))] if p.is_file()]
     summary=(f"**{duration:.1f} detik** · {int(sr):,} Hz · Voice Design · "
-             f"gaya **{style}** · seed {int(seed)} · CFG {float(design_cfg):.2f} · steps {int(design_steps)}\n\n"
+             f"gaya **{style}** · language **{design_language}** · seed {int(design_seed)} · CFG {float(design_cfg):.2f} · steps {int(design_steps)}\n\n"
              f"**Voice plan:** {voice_plan}")
     return audio_result,summary,files
 
@@ -168,6 +168,7 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                 gender=gr.Dropdown(choices=["Auto","Male","Female"],value="Auto",label="Gender")
                 age=gr.Dropdown(choices=["Auto","Young Adult","Adult","Mature","Senior"],value="Auto",label="Age")
                 timbre=gr.Dropdown(choices=["Natural","Warm","Bright","Deep","Soft","Crisp","Breathy","Rich"],value="Natural",label="Timbre")
+                design_language=gr.Dropdown(choices=LANGUAGE_CHOICES,value="Indonesian",label="Language")
                 accent=gr.Dropdown(choices=["Auto","Indonesian","American English","British English","International English"],value="Auto",label="Accent")
                 style=gr.Dropdown(choices=STYLE_CHOICES,value="Natural",label="Gaya Suara",info="Gaya mencakup cara bicara, ekspresi, energi, dan ritme.")
                 custom_instruction=gr.Textbox(label="Custom Style",lines=4,max_lines=7,placeholder="Contoh: warm, relaxed, like a late-night podcast host with natural pauses…")
@@ -195,7 +196,7 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
     target_text.change(describe_char_count,inputs=[target_text],outputs=[char_counter])
     generate_btn.click(
         generate_dispatch,
-        inputs=[mode_state,target_text,reference_audio,reference_transcript,language,seed,design_seed,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps],
+        inputs=[mode_state,target_text,reference_audio,reference_transcript,language,seed,design_seed,design_language,output_speed,pitch_semitones,gender,age,timbre,accent,style,custom_instruction,design_cfg,design_steps],
         outputs=[generated_audio,generation_summary,output_files],
     )
 
