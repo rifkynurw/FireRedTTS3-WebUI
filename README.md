@@ -859,8 +859,8 @@ Dokumen ini dimaksudkan sebagai **baseline teknis/handoff** agar pengembangan be
    - Instruct baru disiapkan saat Voice Design pertama kali dipakai.
 
 2. **Voice generation lebih cepat**
-   - Voice Design retry dibatasi ke `FIRERED_MAX_DESIGN_ATTEMPTS=2`.
-   - Retry hanya dipakai bila voice plan melanggar hard setting.
+   - Voice Design sekarang menggunakan **single-pass inference** per request.
+   - Validasi Voice Plan tetap dilakukan sebagai diagnosis, tetapi mismatch tidak memicu synthesis kedua; ini mencegah waktu generate berlipat.
    - `torch.cuda.empty_cache()` tidak lagi dipanggil setelah setiap request sukses. Cache GPU dibersihkan ketika model benar-benar berpindah.
 
 3. **WebUI lebih rapi**
@@ -878,10 +878,10 @@ Dokumen ini dimaksudkan sebagai **baseline teknis/handoff** agar pengembangan be
 ### Konfigurasi baru
 
 ```text
-FIRERED_MAX_DESIGN_ATTEMPTS=2
+FIRERED_MAX_DESIGN_ATTEMPTS=1
 ```
 
-Nilai ini dapat dinaikkan untuk eksperimen terkontrol, tetapi nilai `2` adalah baseline untuk menjaga waktu generate tetap masuk akal.
+Kontrak runtime sekarang single-pass: setiap klik Generate menghasilkan tepat satu synthesis Voice Design. Validator tetap boleh memeriksa Voice Plan, tetapi tidak melakukan retry otomatis.
 
 ### Dampak arsitektur
 

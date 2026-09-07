@@ -175,6 +175,18 @@ def _history_push(history, *, mode, text, download_path, duration):
     return updated[:HISTORY_LIMIT]
 
 
+def _reset_history_ui():
+    # Always start a fresh browser session with an empty history.
+    empty = []
+    return [empty, *_history_updates(empty)]
+
+
+def _render_history(history):
+    # Keep history rendering in a short, separate event so the long synthesis
+    # event never owns/locks the history controls while generation is running.
+    return _history_updates(history)
+
+
 def _begin_generation():
     return (
         gr.update(value="⏳ Preparing…", interactive=False),
@@ -257,7 +269,6 @@ def run_generation_ui(
             gr.update(interactive=True),
             gr.update(value="Ready · output generated"),
             new_history,
-            *_history_updates(new_history),
         )
     except Exception as exc:
         message = f"❌ Generate gagal · {type(exc).__name__}: {exc}"
@@ -270,7 +281,6 @@ def run_generation_ui(
             gr.update(interactive=True),
             gr.update(value="Generation failed"),
             list(history or []),
-            *_history_updates(history),
         )
 
 
@@ -447,15 +457,21 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
     for button, person_name in zip(person_buttons, PERSON_PRESETS):
         button.click(lambda name=person_name: apply_person_preset(name), inputs=[], outputs=[gender, age, timbre, accent, custom_instruction])
 
+    # Long synthesis owns only the main output controls and history state.
+    # History widgets are rendered by a separate short event after synthesis,
+    # so Play/Copy/Download remain usable during generation.
     generation_event = generate_btn.click(
         _begin_generation,
         inputs=[],
         outputs=[generate_btn, generated_audio, output_loading, mode_nav, output_status],
         js=OUTPUT_SCROLL_JS,
+        queue=False,
+        trigger_mode="once",
     ).then(
         _generation_phase,
         inputs=[],
         outputs=[generate_btn, output_loading, output_status],
+        queue=False,
     ).then(
         run_generation_ui,
         inputs=[
@@ -466,8 +482,23 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
         outputs=[
             generated_audio, generation_summary, generation_prompt, output_loading,
             generate_btn, mode_nav, output_status, history_state,
-            *history_outputs,
         ],
+        trigger_mode="once",
+        concurrency_limit=1,
+        concurrency_id="speech-generation",
+    ).then(
+        _render_history,
+        inputs=[history_state],
+        outputs=[*history_outputs],
+        queue=False,
+    )
+
+    # Reset all six slots explicitly at page/session initialization.
+    demo.load(
+        _reset_history_ui,
+        inputs=[],
+        outputs=[history_state, *history_outputs],
+        queue=False,
     )
 
 import threading
