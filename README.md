@@ -908,3 +908,132 @@ reuse Instruct for subsequent Design requests
 ```
 
 Tidak ada perubahan terhadap prinsip bahwa Voice Plan bukan jaminan acoustic accent. Untuk aksen Indonesia yang konsisten, Voice Cloning dengan reference speaker Indonesia tetap menjadi jalur yang lebih dapat diprediksi.
+
+## Patch28.16b — WebUI materialization regression fix
+
+### Root cause
+The Fix28.16a notebook used `STANDARD_WEBUI_FILE.write_text(STANDARD_WEBUI_SOURCE, ...)` while `STANDARD_WEBUI_SOURCE` had not been explicitly assigned. This caused:
+
+```text
+NameError: name 'STANDARD_WEBUI_SOURCE' is not defined
+```
+
+### Fix
+The canonical WebUI source is now defined explicitly before theme/materialization:
+
+```python
+STANDARD_WEBUI_SOURCE = APP_PATCH_SOURCE
+```
+
+The materialization step also contains a defensive guard:
+
+```python
+if not STANDARD_WEBUI_SOURCE:
+    raise RuntimeError("STOP: STANDARD_WEBUI_SOURCE is empty; WebUI source materialization is unsafe.")
+```
+
+The validation cell now fails early with a clear diagnostic if the canonical WebUI source is missing from notebook state.
+
+### Validation
+- Notebook JSON validation: PASS
+- All code cells AST parse: PASS
+- Materialization cell executed with isolated temporary paths: PASS
+- Generated `backend.py` syntax: PASS
+- Generated `standard_ui.py` syntax: PASS
+
+
+## Patch28.16c — Generate UX, Output Loading, History, dan Mode Sync
+
+Patch ini menyempurnakan WebUI tanpa mengubah kontrak model FireRedTTS3 yang sudah stabil.
+
+### 1. Generate button dikunci selama proses
+
+Saat user menekan Generate Speech:
+
+```text
+Generate Speech
+      ↓
+⏳ Preparing…
+      ↓
+🔊 Generating…
+      ↓
+Generate Speech
+```
+
+Button menjadi `interactive=False` selama request berjalan. Navigasi Voice Cloning / Voice Design di sidebar kiri juga dinonaktifkan selama request agar `mode_state` tidak berubah di tengah generation.
+
+### 2. Output audio berubah menjadi loading
+
+Audio hasil sebelumnya disembunyikan segera setelah generation dimulai dan digantikan loading card dengan spinner. Setelah request selesai, audio baru kembali ditampilkan.
+
+Struktur output:
+
+```text
+Output
+ ├── Loading / Audio
+ ├── Output metadata + Voice Plan
+ ├── Generated Text / Prompt (copyable)
+ └── Export
+```
+
+Metadata dan generated text tetap berada di bawah stage audio/loading sehingga konteks request sebelumnya tidak hilang selama proses berjalan.
+
+### 3. History di sidebar kiri
+
+Sidebar sekarang menyimpan maksimal `HISTORY_LIMIT = 6` hasil terbaru dalam sesi UI. Setiap entry berisi:
+
+- mode dan waktu generation;
+- text yang digenerate;
+- textbox dengan `buttons=["copy"]`;
+- tombol `Unduh WAV`.
+
+Entry terbaru berada paling atas. History menggunakan `gr.State`, sehingga tidak menambah I/O Drive hanya untuk menyimpan metadata sesi.
+
+### 4. Voice Cloning / Voice Design selalu sinkron
+
+`mode_state` menjadi single source of truth. Radio di sidebar kiri mengubah:
+
+```text
+mode_state
+clone_panel visibility
+design_panel visibility
+active mode title
+left mode status
+right settings status
+```
+
+secara bersamaan. Navigasi dikunci selama generation untuk mencegah mismatch antara mode yang diproses dan settings yang terlihat.
+
+### 5. Fix materialisasi notebook
+
+Canonical WebUI source sekarang didefinisikan secara eksplisit:
+
+```python
+APP_PATCH_SOURCE = ...
+STANDARD_WEBUI_SOURCE = APP_PATCH_SOURCE
+```
+
+sebelum `STANDARD_WEBUI_FILE.write_text(...)`. Source backend/UI/CSS juga dibentuk menggunakan `repr(...)` agar quote internal tidak dapat menyebabkan `SyntaxError` pada notebook.
+
+### 6. Validasi Fix28.16c
+
+Validation tambahan memastikan source aktif memiliki:
+
+```text
+HISTORY_LIMIT
+_begin_generation
+_generation_phase
+run_generation_ui
+output_loading
+history_state
+gr.DownloadButton
+buttons=["copy"]
+mode_state
+```
+
+serta tetap mempertahankan validasi backend, lazy Base/Instruct switching, official Instruct FP32 path, dan Rubber Band R3 HQ dari patch sebelumnya.
+
+
+### Fix28.16c compatibility note
+
+Textbox copy actions use the Gradio 6-compatible component API `buttons=["copy"]` rather than the removed/unsupported `show_copy_button` argument. This was validated with a real Gradio 6.x component constructor.

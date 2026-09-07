@@ -61,3 +61,32 @@ label{color:var(--muted)!important;font-size:11.5px!important;font-weight:500!im
 .settings-panel .gradio-accordion > .label-wrap{color:var(--muted)!important;font-size:11px!important}
 @media(min-width:851px){.preset-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}.settings-panel .preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:850px){.preset-grid{gap:6px!important}.narration-preset-btn,.person-preset-btn{font-size:10px!important;padding:7px 8px!important}}
+
+/* Fix28.16c — generation state, loading output, mode sync, history */
+.mode-nav{background:var(--surface)!important;border:1px solid var(--line)!important;border-radius:12px!important;padding:7px!important;gap:5px!important}
+.mode-nav label{border:1px solid transparent!important;border-radius:9px!important;padding:9px 10px!important;margin:0!important;font-weight:600!important;color:var(--muted)!important;background:transparent!important}
+.mode-nav label:has(input:checked){background:#F4E3D7!important;color:var(--copper-deep)!important;border-color:rgba(193,98,43,.20)!important}
+.mode-nav label:has(input:disabled){opacity:.55!important;cursor:not-allowed!important}
+.mode-status,.settings-mode-status{font-size:10.5px!important;color:var(--muted-soft)!important;margin:7px 2px 12px!important}
+.settings-mode-title{margin:0 0 2px!important}
+.settings-mode-title p{font-family:'Bricolage Grotesque',sans-serif!important;font-size:18px!important;font-weight:600!important;color:var(--ink)!important;margin:0!important}
+.history-heading{margin-top:8px!important}
+.history-hint{font-size:10px!important;color:var(--muted-soft)!important;line-height:1.4!important;margin:-2px 2px 8px!important}
+.history-slot{border:1px solid var(--line)!important;border-radius:12px!important;background:rgba(255,255,255,.62)!important;margin-bottom:7px!important;overflow:hidden!important}
+.history-slot > summary{font-size:10.5px!important;color:var(--ink)!important;font-weight:600!important}
+.history-text textarea{min-height:82px!important;font-size:10.5px!important;line-height:1.45!important;background:var(--surface)!important}
+.history-download{min-height:34px!important;border-radius:9px!important;font-size:10.5px!important;background:var(--surface)!important;border:1px solid var(--line)!important;color:var(--ink)!important}
+.history-download:hover{background:#F7E9DD!important;color:var(--copper-deep)!important}
+.preset-grid,.person-grid{gap:7px!important;flex-wrap:wrap!important}
+.narration-preset-btn,.person-preset-btn{min-height:36px!important;padding:7px 9px!important;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:10px!important;font-size:10.5px!important;font-weight:500!important;flex:1 1 150px!important}
+.person-preset-btn{flex-basis:130px!important}
+.output-stage{position:relative!important;min-height:115px!important;margin-top:4px!important}
+.output-loading{position:absolute!important;inset:0!important;z-index:5!important;margin:0!important}
+.output-loading-card{min-height:112px!important;border:1px solid var(--line)!important;border-radius:14px!important;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(244,239,228,.96))!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;gap:6px!important;box-shadow:var(--shadow)!important}
+.loading-spinner{width:27px!important;height:27px!important;border:3px solid var(--line)!important;border-top-color:var(--copper)!important;border-radius:50%!important;animation:cangkeman-spin .85s linear infinite!important}
+.loading-title{font-size:12px!important;font-weight:600!important;color:var(--ink)!important}
+.loading-subtitle{font-size:10.5px!important;color:var(--muted-soft)!important}
+.output-audio{min-height:112px!important}
+.generation-prompt textarea{min-height:84px!important;font-size:11.5px!important;line-height:1.5!important;background:var(--surface)!important}
+@keyframes cangkeman-spin{to{transform:rotate(360deg)}}
+@media(max-width:850px){.history-slot{margin-bottom:6px!important}.narration-preset-btn,.person-preset-btn{flex-basis:100%!important}.nav-col{padding-bottom:14px!important}}
