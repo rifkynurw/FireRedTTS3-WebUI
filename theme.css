@@ -45,3 +45,19 @@ label{color:var(--muted)!important;font-size:11.5px!important;font-weight:500!im
 .gradio-container .prose{color:var(--muted)!important}
 @media(max-width:1100px){.nav-col{min-width:165px!important}.settings-col{min-width:290px!important}.workspace-col{padding-left:4px!important}}
 @media(max-width:850px){.app-shell{flex-direction:column!important}.nav-col{min-height:auto!important}.nav-spacer{min-height:0!important}.settings-col{width:100%!important}.workspace-col{padding:4px!important}}
+
+.preset-heading{font-size:11px!important;color:var(--muted)!important;margin:4px 0 8px!important}
+.narration-preset-btn{min-height:38px!important;padding:8px 10px!important;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:10px!important;font-size:11px!important;font-weight:500!important}
+.narration-preset-btn:hover{border-color:var(--copper)!important;color:var(--copper-deep)!important;background:#FBF3EC!important}
+
+.preset-heading{font-size:11px!important;color:var(--muted)!important;margin:4px 0 8px!important}
+.preset-grid{gap:8px!important;align-items:stretch!important}
+.narration-preset-btn,.person-preset-btn{min-height:36px!important;padding:8px 10px!important;border:1px solid var(--line)!important;background:var(--panel)!important;color:var(--ink)!important;border-radius:10px!important;font-size:11px!important;font-weight:500!important}
+.narration-preset-btn:hover,.person-preset-btn:hover{border-color:var(--copper)!important;color:var(--copper-deep)!important;background:#FBF3EC!important}
+.person-preset-btn{font-size:10.5px!important}
+.icon-btn{min-width:42px!important;width:42px!important;padding:0!important;border:1px solid var(--line)!important;background:var(--surface)!important;color:var(--ink)!important;border-radius:10px!important}
+.icon-btn:hover{border-color:var(--copper)!important;color:var(--copper-deep)!important}
+.settings-panel .gradio-accordion{border-color:var(--line)!important;background:transparent!important}
+.settings-panel .gradio-accordion > .label-wrap{color:var(--muted)!important;font-size:11px!important}
+@media(min-width:851px){.preset-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}.settings-panel .preset-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:850px){.preset-grid{gap:6px!important}.narration-preset-btn,.person-preset-btn{font-size:10px!important;padding:7px 8px!important}}
