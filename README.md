@@ -1037,3 +1037,82 @@ serta tetap mempertahankan validasi backend, lazy Base/Instruct switching, offic
 ### Fix28.16c compatibility note
 
 Textbox copy actions use the Gradio 6-compatible component API `buttons=["copy"]` rather than the removed/unsupported `show_copy_button` argument. This was validated with a real Gradio 6.x component constructor.
+
+## Fix28.16d — Semantic WebUI validation repair
+
+### Root cause
+The previous WebUI validator required the exact source substring:
+
+```python
+mode_nav=gr.Radio(
+```
+
+The actual generated source used valid formatting with whitespace:
+
+```python
+mode_nav = gr.Radio(
+```
+
+This caused a false-positive startup failure:
+
+```text
+RuntimeError: STOP: required standard WebUI feature missing: navigation Radio
+```
+
+### Patch
+Fix28.16d no longer validates the Radio by exact text formatting. The validator parses `app.py` with Python AST and verifies that `mode_nav` is assigned from the `gr.Radio(...)` constructor.
+
+The same validation approach is used for the Generate handler and `demo.launch(...)`, while literal checks remain only where the literal itself is the intended contract (`share=True` and the public URL handoff).
+
+This prevents harmless whitespace, line-break, or formatting changes from breaking notebook startup validation.
+
+### Validation
+Fix28.16d was checked for:
+
+- valid notebook JSON;
+- successful AST parsing of every code cell;
+- `app.py` Python compilation;
+- semantic detection of `mode_nav = gr.Radio(...)`;
+- semantic detection of the generate event;
+- semantic detection of `demo.launch(...)`;
+- public share and URL handoff invariants.
+
+No functional change is made to Voice Cloning or Voice Design generation by this patch; it only makes the WebUI validation robust.
+
+## Fix28.16e — Output Media, History Playback/Download, and Output Focus
+
+### Main output
+The main media output is now rendered directly below `Generate Speech` and remains present even before the first generation. An empty-state card is shown until an audio result exists.
+
+During generation, the previous audio component is hidden and replaced in the same output area by an animated loading card. The summary metadata and generated-text prompt remain below this media stage.
+
+The separate `Export` file component was removed as requested. The generated audio remains available through the main player, while downloadable WAV copies are exposed from History.
+
+### Automatic output focus
+Clicking `Generate Speech` immediately runs the client-side `OUTPUT_SCROLL_JS` handler and smoothly scrolls the browser to `#output-stage`, where the generation status and media output are displayed.
+
+### History
+The left sidebar History keeps up to six recent successful generations for the current session. Each history card includes:
+
+- generated text with a Gradio copy action;
+- a native Gradio audio player for Play;
+- an `Unduh WAV` download button;
+- mode, duration, and generation time in the card header.
+
+History audio uses the PCM16 WAV produced by the existing backend save path when available, falling back to the master WAV only if necessary.
+
+### Mode synchronization
+The left `Voice Cloning` / `Voice Design` selector remains the single source of truth through `mode_state`. Its change handler updates both right-side settings panels and both mode status indicators together. The selector is disabled during generation so the active request cannot be switched to another mode midway.
+
+### Validation
+The notebook validator now checks the output-stage, loading-state, History audio/download, and copy contracts. It also explicitly rejects obsolete `output_files` / `file-output` output-export remnants.
+
+The canonical materialization cell continues to define:
+
+```python
+APP_PATCH_SOURCE = ...
+STANDARD_WEBUI_SOURCE = APP_PATCH_SOURCE
+THEME_SOURCE = ...
+```
+
+before writing the runtime files, preventing the earlier `STANDARD_WEBUI_SOURCE` `NameError`.
