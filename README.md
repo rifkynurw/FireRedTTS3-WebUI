@@ -1116,3 +1116,29 @@ THEME_SOURCE = ...
 ```
 
 before writing the runtime files, preventing the earlier `STANDARD_WEBUI_SOURCE` `NameError`.
+
+
+## Patch28.16f — Compact Output & High-Contrast History
+
+Perbaikan UI lanjutan:
+
+- area Output tidak lagi memiliki `min-height` besar saat kosong/loading, sehingga ruang kosong panjang di bawah output dihilangkan;
+- audio output hanya tampil ketika hasil sudah siap, sedangkan loading card menempati area media yang sama;
+- kartu output, metadata, dan Generated Text dibuat lebih rapat agar alur Workspace → Generate → Output terasa satu kesatuan;
+- History sidebar memakai kontras lebih kuat untuk judul, text, player, dan tombol unduh;
+- setiap item History tetap menyediakan **Play preview**, **Copy Generated text**, dan **Unduh audio**;
+- teks status History diperjelas dan tidak menggunakan opacity rendah;
+- source `app.py` dan `theme.css` pada notebook disinkronkan ulang agar hasil materialisasi runtime identik dengan file WebUI.
+
+### Validation contract
+
+Patch ini tidak mengubah pipeline inference/model. Perubahannya berada pada presentasi output, history, dan source synchronization. `generated_audio` dimulai tersembunyi agar tidak menyisakan area audio kosong sebelum hasil tersedia.
+
+
+## Patch28.16g — Stable Compact Output Media
+
+- `output-media-card` diberi tinggi tetap yang ringkas agar media tidak menyebabkan ruang kosong panjang ketika audio disembunyikan atau loading ditampilkan.
+- Loading card dan audio player memakai area visual yang sama dengan tinggi konsisten.
+- History sekarang menampilkan **nama file audio secara eksplisit** di dalam kartu, dengan kontras tinggi dan `overflow-wrap` agar nama panjang tetap terbaca.
+- Urutan setiap item History tetap: filename → Generated text (Copy) → Play preview → Unduh audio.
+- Source canonical `app.py` dan `theme.css` di notebook disinkronkan kembali ke file final.

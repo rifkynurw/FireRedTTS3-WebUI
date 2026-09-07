@@ -142,10 +142,12 @@ def _history_updates(history):
             stamp = item.get("time", "")
             mode = item.get("mode", "Voice")
             duration = item.get("duration", "")
-            label = f"{index + 1:02d} · {mode} · {duration} · {stamp}"
+            label = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}"
             path = item.get("audio_path")
+            filename = Path(path).name if path else "Audio belum tersedia"
             updates.extend([
                 gr.update(visible=True, label=label),
+                gr.update(value=f"**{filename}**"),
                 gr.update(value=item.get("text", "")),
                 gr.update(value=path, visible=True),
                 gr.update(value=path, interactive=bool(path)),
@@ -153,6 +155,7 @@ def _history_updates(history):
         else:
             updates.extend([
                 gr.update(visible=False),
+                gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=None, visible=False),
                 gr.update(value=None, interactive=False),
@@ -295,7 +298,7 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
             )
             active_nav_status = gr.Markdown("● Voice Cloning aktif", elem_classes=["mode-status"])
             gr.Markdown("HISTORY", elem_classes=["nav-caption", "history-heading"])
-            history_hint = gr.Markdown("Hasil terbaru akan muncul di sini.", elem_classes=["history-hint"])
+            history_hint = gr.Markdown("6 hasil terbaru · klik item untuk Play, Copy, atau Unduh.", elem_classes=["history-hint"])
             history_accordions = []
             history_outputs = []
             for i in range(HISTORY_LIMIT):
@@ -303,21 +306,22 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                     f"{i + 1:02d} · Belum ada hasil", open=False, visible=False,
                     elem_classes=["history-slot"]
                 ) as history_accordion:
+                    history_file = gr.Markdown("", elem_classes=["history-file"])
                     history_text = gr.Textbox(
                         label="Generated text", lines=3, interactive=False,
                         buttons=["copy"], elem_classes=["history-text"]
                     )
                     history_audio = gr.Audio(
-                        value=None, label="", show_label=False,
+                        value=None, label="Play preview", show_label=True,
                         interactive=False, visible=False,
                         autoplay=False, elem_classes=["history-audio"]
                     )
                     history_download = gr.DownloadButton(
-                        "⬇ Unduh WAV", value=None, interactive=False,
+                        "⬇  Unduh audio", value=None, interactive=False,
                         elem_classes=["history-download"]
                     )
                 history_accordions.append(history_accordion)
-                history_outputs.extend([history_accordion, history_text, history_audio, history_download])
+                history_outputs.extend([history_accordion, history_file, history_text, history_audio, history_download])
             gr.Markdown("FireRedTTS3 · T4", elem_classes=["nav-foot"])
 
         with gr.Column(scale=1, elem_classes=["workspace-col"]):
@@ -339,14 +343,14 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                 with gr.Column(elem_classes=["output-media-card"]):
                     generated_audio = gr.Audio(
                         value=None, label="", show_label=False, autoplay=False,
-                        visible=True, elem_classes=["output-audio"]
+                        visible=False, elem_classes=["output-audio"]
                     )
                     output_loading = gr.HTML(
                         """<div class='output-empty-card'><div class='output-empty-icon'>◉</div><div class='loading-title'>Belum ada audio</div><div class='loading-subtitle'>Hasil generate akan tampil di sini.</div></div>""",
                         visible=True, elem_classes=["output-loading"]
                     )
             generation_summary = gr.Markdown(
-                "Parameter, durasi, waktu proses, dan voice plan akan tampil di sini.",
+                "Durasi, waktu proses, parameter, dan voice plan akan tampil di sini.",
                 elem_classes=["summary-box"]
             )
             generation_prompt = gr.Textbox(

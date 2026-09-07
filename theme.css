@@ -142,3 +142,42 @@ label{color:var(--muted)!important;font-size:11.5px!important;font-weight:500!im
   .output-stage{min-height:210px!important}
   .output-media-card,.output-empty-card,.output-loading-card,.output-error-card{min-height:185px!important}
 }
+
+
+/* Fix28.16f — compact output + high-contrast history */
+.output-stage{scroll-margin-top:16px!important;position:relative!important;margin-top:4px!important;min-height:0!important}
+.output-media-card{position:relative!important;min-height:0!important;height:auto!important;border:1px solid var(--line)!important;border-radius:15px!important;background:linear-gradient(145deg,#FFFFFF,#F8F2E9)!important;overflow:hidden!important;box-shadow:0 8px 20px rgba(70,55,35,.05)!important}
+.output-audio{position:relative!important;z-index:2!important;min-height:88px!important;width:100%!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:6px 8px!important}
+.output-audio audio{width:100%!important;min-height:68px!important}
+.output-loading{position:absolute!important;inset:0!important;z-index:8!important;margin:0!important;height:100%!important}
+.output-empty-card,.output-loading-card,.output-error-card{min-height:118px!important;height:118px!important;width:100%!important;border-radius:14px!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;gap:6px!important;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(244,239,228,.97))!important}
+.output-empty-icon{width:38px!important;height:38px!important;font-size:18px!important}
+.output-status{font-size:10.5px!important;color:#6F6258!important;margin:0 1px 7px!important;font-weight:600!important}
+.summary-box{margin-top:9px!important;margin-bottom:9px!important;min-height:0!important}
+.generation-prompt{margin-top:0!important}
+.generation-prompt textarea{min-height:72px!important}
+.history-heading{margin-top:11px!important}
+.history-hint{color:#74685D!important}
+.history-slot{border:1px solid #D6C7B7!important;border-radius:12px!important;background:#FFFFFF!important;margin-bottom:7px!important;overflow:hidden!important;box-shadow:0 4px 14px rgba(70,55,35,.05)!important}
+.history-slot[open]{border-color:#C98A61!important;box-shadow:0 7px 18px rgba(193,98,43,.10)!important}
+.history-slot > summary{font-size:10.5px!important;color:#2B2420!important;font-weight:750!important;padding:9px 10px!important;background:#F8EDE3!important;line-height:1.3!important}
+.history-slot > summary:hover{background:#F3E3D6!important}
+.history-text{margin:7px!important}
+.history-text textarea{min-height:66px!important;font-size:10.5px!important;line-height:1.4!important;background:#FFFEFC!important;border-color:#D8CABA!important;color:#2B2420!important;font-weight:500!important}
+.history-text label{color:#5F534A!important;font-weight:700!important}
+.history-audio{margin:6px 7px 2px!important;background:#FFF!important;border:1px solid #D8CABA!important;border-radius:9px!important;padding:0!important}
+.history-audio audio{width:100%!important}
+.history-download{width:calc(100% - 14px)!important;min-height:34px!important;border-radius:9px!important;font-size:10.5px!important;background:#B95C28!important;border:0!important;color:#FFFFFF!important;font-weight:750!important;margin:5px 7px 7px!important}
+.history-download:hover{background:#933F19!important;color:#FFFFFF!important}
+.history-download button,.history-download *{color:#FFFFFF!important;opacity:1!important}
+.mode-status,.settings-mode-status{color:#8A4E2D!important;font-weight:700!important}
+@media(max-width:850px){.output-stage{min-height:0!important}.output-empty-card,.output-loading-card,.output-error-card{height:110px!important;min-height:110px!important}.output-audio{min-height:82px!important}}
+
+
+/* Fix28.16g — stable compact output media height */
+.output-media-card{min-height:120px!important;height:120px!important}
+.output-audio{min-height:102px!important;height:102px!important;display:flex!important;align-items:center!important}
+.output-loading{height:100%!important}
+.output-empty-card,.output-loading-card,.output-error-card{height:118px!important;min-height:118px!important}
+.history-file{margin:6px 8px 2px!important;padding:6px 8px!important;border:1px solid #E2D4C5!important;border-radius:8px!important;background:#FBF6F0!important;color:#473B33!important;font-size:10.5px!important;line-height:1.35!important}
+.history-file strong{color:#2B2420!important;font-weight:750!important;overflow-wrap:anywhere!important}
