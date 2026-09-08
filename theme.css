@@ -493,3 +493,77 @@ body, .gradio-container, textarea, input, button, select{
   .brand-name{font-size:24px!important}
   .brand-author{font-size:10px!important}
 }
+
+
+/* Fix28.16j — deterministic History cards (replace lazy Accordion rendering) */
+.nav-col .history-slot{
+  display:block!important;
+  width:100%!important;
+  min-height:0!important;
+  margin:0 0 10px!important;
+  padding:8px!important;
+  box-sizing:border-box!important;
+  background:#FFFDF9!important;
+  border:1px solid #DCCABB!important;
+  border-radius:12px!important;
+  box-shadow:0 4px 14px rgba(70,55,35,.05)!important;
+  overflow:visible!important;
+  opacity:1!important;
+}
+.nav-col .history-meta{
+  margin:0 1px 5px!important;
+  padding:0!important;
+  color:#8A4E2D!important;
+  font-size:9.5px!important;
+  line-height:1.3!important;
+  font-weight:750!important;
+  letter-spacing:.02em!important;
+}
+.nav-col .history-file{
+  display:block!important;
+  visibility:visible!important;
+  margin:0 0 6px!important;
+  padding:7px 8px!important;
+  background:#F8EDE3!important;
+  border:1px solid #E0CFC0!important;
+  border-radius:8px!important;
+  color:#211B17!important;
+  font-size:10.5px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+  box-sizing:border-box!important;
+}
+.nav-col .history-file p{margin:0!important}
+.nav-col .history-file strong{display:block!important;color:#211B17!important;font-weight:800!important;overflow-wrap:anywhere!important}
+.nav-col .history-text{margin:0 0 7px!important}
+.nav-col .history-text label{color:#6E6258!important;font-size:9.5px!important;font-weight:700!important}
+.nav-col .history-text textarea{
+  min-height:60px!important;
+  background:#FFF!important;
+  border:1px solid #E0D4C7!important;
+  color:#2B2420!important;
+  font-size:10px!important;
+  line-height:1.4!important;
+}
+.nav-col .history-audio{
+  display:block!important;
+  visibility:visible!important;
+  margin:0 0 7px!important;
+  background:#FFF!important;
+  border:1px solid #D8CABA!important;
+  border-radius:8px!important;
+  padding:0!important;
+}
+.nav-col .history-audio audio{width:100%!important}
+.nav-col .history-download{
+  width:100%!important;
+  min-height:34px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:8px!important;
+  background:#B95C28!important;
+  color:#FFF!important;
+  font-size:10px!important;
+  font-weight:750!important;
+}
+.nav-col .history-download,.nav-col .history-download *{color:#FFF!important;opacity:1!important}

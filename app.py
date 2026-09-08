@@ -134,6 +134,9 @@ def set_clone_preset(name):
 
 
 def _history_updates(history):
+    # History uses ordinary Groups instead of Accordion so the browser receives
+    # deterministic, always-rendered child components. This avoids the blank
+    # container seen when nested Accordion content is lazily mounted.
     history = list(history or [])[:HISTORY_LIMIT]
     updates = []
     for index in range(HISTORY_LIMIT):
@@ -144,10 +147,11 @@ def _history_updates(history):
             duration = item.get("duration", "")
             path = item.get("audio_path")
             filename = Path(path).name if path else "Audio belum tersedia"
-            display_filename = filename if len(filename) <= 34 else filename[:31] + "…"
-            label = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}  ·  {display_filename}"
+            display_filename = filename if len(filename) <= 42 else filename[:39] + "…"
+            meta = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}"
             updates.extend([
-                gr.update(visible=True, open=True, label=label),
+                gr.update(visible=True),
+                gr.update(value=meta),
                 gr.update(value=f"**{filename}**"),
                 gr.update(value=item.get("text", "")),
                 gr.update(value=path, visible=True),
@@ -155,7 +159,8 @@ def _history_updates(history):
             ])
         else:
             updates.extend([
-                gr.update(visible=False, open=False),
+                gr.update(visible=False),
+                gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=None, visible=False),
@@ -318,13 +323,14 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
             active_nav_status = gr.Markdown("● Kloning Suara aktif", elem_classes=["mode-status"])
             gr.Markdown("RIWAYAT GENERASI", elem_classes=["nav-caption", "history-heading"])
             history_hint = gr.Markdown("Belum ada hasil · Generate Speech untuk membuat audio.", elem_classes=["history-hint"])
-            history_accordions = []
+            history_slots = []
             history_outputs = []
             for i in range(HISTORY_LIMIT):
-                with gr.Accordion(
-                    f"{i + 1:02d} · Belum ada hasil", open=True, visible=False,
+                with gr.Group(
+                    visible=False,
                     elem_classes=["history-slot"]
-                ) as history_accordion:
+                ) as history_group:
+                    history_meta = gr.Markdown("", elem_classes=["history-meta"])
                     history_file = gr.Markdown("", elem_classes=["history-file"])
                     history_text = gr.Textbox(
                         label="Teks yang digenerate", lines=3, interactive=False,
@@ -339,8 +345,8 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                         "⬇  Unduh WAV", value=None, interactive=False,
                         elem_classes=["history-download"]
                     )
-                history_accordions.append(history_accordion)
-                history_outputs.extend([history_accordion, history_file, history_text, history_audio, history_download])
+                history_slots.append(history_group)
+                history_outputs.extend([history_group, history_meta, history_file, history_text, history_audio, history_download])
             gr.Markdown("FireRedTTS3 · NVIDIA T4 · AI Voice Studio", elem_classes=["nav-foot"])
 
         with gr.Column(scale=1, elem_classes=["workspace-col"]):
