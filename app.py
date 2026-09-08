@@ -142,12 +142,13 @@ def _history_updates(history):
             stamp = item.get("time", "")
             mode = item.get("mode", "Voice")
             duration = item.get("duration", "")
-            label = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}"
             path = item.get("audio_path")
             filename = Path(path).name if path else "Audio belum tersedia"
+            display_filename = filename if len(filename) <= 34 else filename[:31] + "…"
+            label = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}  ·  {display_filename}"
             updates.extend([
                 gr.update(visible=True, label=label),
-                gr.update(value=f"**{filename}**"),
+                gr.update(value=f"📄 **{filename}**"),
                 gr.update(value=item.get("text", "")),
                 gr.update(value=path, visible=True),
                 gr.update(value=path, interactive=bool(path)),
@@ -175,16 +176,24 @@ def _history_push(history, *, mode, text, download_path, duration):
     return updated[:HISTORY_LIMIT]
 
 
+def _history_hint(history):
+    count = min(len(list(history or [])), HISTORY_LIMIT)
+    if count == 0:
+        return "Belum ada hasil · Generate Speech untuk membuat audio."
+    label = "hasil terbaru" if count != 1 else "hasil terbaru"
+    return f"{count} {label} · klik item untuk Play, Copy, atau Unduh."
+
+
 def _reset_history_ui():
     # Always start a fresh browser session with an empty history.
     empty = []
-    return [empty, *_history_updates(empty)]
+    return [_history_hint(empty), empty, *_history_updates(empty)]
 
 
 def _render_history(history):
     # Keep history rendering in a short, separate event so the long synthesis
     # event never owns/locks the history controls while generation is running.
-    return _history_updates(history)
+    return [_history_hint(history), *_history_updates(history)]
 
 
 def _begin_generation():
@@ -308,7 +317,7 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
             )
             active_nav_status = gr.Markdown("● Voice Cloning aktif", elem_classes=["mode-status"])
             gr.Markdown("HISTORY", elem_classes=["nav-caption", "history-heading"])
-            history_hint = gr.Markdown("6 hasil terbaru · klik item untuk Play, Copy, atau Unduh.", elem_classes=["history-hint"])
+            history_hint = gr.Markdown("Belum ada hasil · Generate Speech untuk membuat audio.", elem_classes=["history-hint"])
             history_accordions = []
             history_outputs = []
             for i in range(HISTORY_LIMIT):
@@ -486,18 +495,25 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
         trigger_mode="once",
         concurrency_limit=1,
         concurrency_id="speech-generation",
-    ).then(
-        _render_history,
-        inputs=[history_state],
-        outputs=[*history_outputs],
-        queue=False,
     )
 
-    # Reset all six slots explicitly at page/session initialization.
+    # Render history from the state-change event, not as an output of the long
+    # synthesis dependency. This keeps existing history audio/download controls
+    # usable while a new synthesis job is running, and guarantees the sidebar is
+    # refreshed as soon as history_state is committed.
+    history_state.change(
+        _render_history,
+        inputs=[history_state],
+        outputs=[history_hint, *history_outputs],
+        queue=False,
+        trigger_mode="once",
+    )
+
+    # Reset all slots explicitly at page/session initialization.
     demo.load(
         _reset_history_ui,
         inputs=[],
-        outputs=[history_state, *history_outputs],
+        outputs=[history_hint, history_state, *history_outputs],
         queue=False,
     )
 

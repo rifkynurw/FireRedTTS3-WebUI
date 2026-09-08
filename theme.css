@@ -181,3 +181,118 @@ label{color:var(--muted)!important;font-size:11.5px!important;font-weight:500!im
 .output-empty-card,.output-loading-card,.output-error-card{height:118px!important;min-height:118px!important}
 .history-file{margin:6px 8px 2px!important;padding:6px 8px!important;border:1px solid #E2D4C5!important;border-radius:8px!important;background:#FBF6F0!important;color:#473B33!important;font-size:10.5px!important;line-height:1.35!important}
 .history-file strong{color:#2B2420!important;font-weight:750!important;overflow-wrap:anywhere!important}
+
+
+/* Sidebar history readability — explicit contrast and non-disabled appearance */
+.history-hint{color:#5F534A!important;font-size:11px!important;font-weight:600!important;line-height:1.45!important;opacity:1!important}
+.history-slot,.history-slot *{opacity:1!important}
+.history-slot > summary,.history-slot > summary *{color:#2B2420!important;opacity:1!important}
+.history-slot > summary{font-size:11.5px!important;font-weight:750!important;letter-spacing:0!important}
+.history-file,.history-file p,.history-file strong{color:#2B2420!important;opacity:1!important}
+.history-file{font-size:11.5px!important;font-weight:600!important;background:#FFF9F3!important;border-color:#D1BDAA!important}
+.history-file strong{font-weight:800!important}
+
+
+/* Fix28.16h — stable sidebar history rendering + cleaner typography */
+.nav-col{
+  overflow:visible!important;
+  color:var(--ink)!important;
+}
+.nav-col .nav-caption{
+  font-size:10px!important;
+  line-height:1.2!important;
+  letter-spacing:.14em!important;
+  font-weight:700!important;
+  color:#74685D!important;
+}
+.nav-col .mode-nav{
+  width:100%!important;
+}
+.nav-col .mode-nav label{
+  font-size:11.5px!important;
+  line-height:1.25!important;
+  font-weight:650!important;
+}
+.nav-col .mode-status{
+  font-size:10.5px!important;
+  line-height:1.35!important;
+  font-weight:650!important;
+}
+.nav-col .history-heading{
+  margin-top:14px!important;
+  margin-bottom:7px!important;
+}
+.nav-col .history-hint{
+  font-size:10px!important;
+  line-height:1.45!important;
+  font-weight:500!important;
+  color:#74685D!important;
+  margin:0 2px 10px!important;
+}
+.nav-col .history-slot{
+  display:block!important;
+  width:100%!important;
+  min-height:0!important;
+  opacity:1!important;
+}
+.nav-col .history-slot > summary{
+  display:flex!important;
+  align-items:center!important;
+  min-height:38px!important;
+  padding:8px 10px!important;
+  font-size:10.8px!important;
+  line-height:1.3!important;
+  font-weight:700!important;
+  color:#2B2420!important;
+  white-space:normal!important;
+  word-break:break-word!important;
+}
+.nav-col .history-file{
+  margin:6px 8px 4px!important;
+  padding:6px 8px!important;
+  font-size:10px!important;
+  line-height:1.3!important;
+  color:#4E4138!important;
+}
+.nav-col .history-file strong{
+  display:block!important;
+  color:#2B2420!important;
+  font-size:10.5px!important;
+  line-height:1.35!important;
+  font-weight:750!important;
+  overflow-wrap:anywhere!important;
+}
+.nav-col .history-text{
+  margin:6px 8px!important;
+}
+.nav-col .history-text label{
+  font-size:9.5px!important;
+  font-weight:650!important;
+  color:#74685D!important;
+}
+.nav-col .history-text textarea{
+  min-height:58px!important;
+  font-size:10px!important;
+  line-height:1.4!important;
+}
+.nav-col .history-audio{
+  margin:5px 8px 2px!important;
+}
+.nav-col .history-download{
+  width:calc(100% - 16px)!important;
+  margin:5px 8px 8px!important;
+  min-height:32px!important;
+  font-size:10px!important;
+}
+.nav-col .nav-foot{
+  margin-top:12px!important;
+  font-size:9.5px!important;
+  line-height:1.3!important;
+  color:#8A7C70!important;
+}
+.nav-col .brand-name{font-size:16px!important;font-weight:700!important}
+.nav-col .brand-tag{font-size:9.5px!important}
+@media(max-width:850px){
+  .nav-col .history-slot > summary{font-size:11px!important}
+  .nav-col .history-file strong{font-size:10.5px!important}
+}
