@@ -147,15 +147,15 @@ def _history_updates(history):
             display_filename = filename if len(filename) <= 34 else filename[:31] + "…"
             label = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}  ·  {display_filename}"
             updates.extend([
-                gr.update(visible=True, label=label),
-                gr.update(value=f"📄 **{filename}**"),
+                gr.update(visible=True, open=True, label=label),
+                gr.update(value=f"**{filename}**"),
                 gr.update(value=item.get("text", "")),
                 gr.update(value=path, visible=True),
                 gr.update(value=path, interactive=bool(path)),
             ])
         else:
             updates.extend([
-                gr.update(visible=False),
+                gr.update(visible=False, open=False),
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=None, visible=False),

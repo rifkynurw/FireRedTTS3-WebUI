@@ -296,3 +296,39 @@ label{color:var(--muted)!important;font-size:11.5px!important;font-weight:500!im
   .nav-col .history-slot > summary{font-size:11px!important}
   .nav-col .history-file strong{font-size:10.5px!important}
 }
+
+
+/* Fix28.16i — force populated history items to remain visually readable */
+.nav-col .history-slot{
+  opacity:1!important; visibility:visible!important;
+  background:#FFFDF9!important; border:1px solid #D8C8B8!important;
+  border-radius:13px!important; overflow:hidden!important;
+}
+.nav-col .history-slot > summary{
+  display:flex!important; align-items:center!important;
+  min-height:46px!important; padding:11px 12px!important;
+  background:#FBF3EC!important; color:#2B2420!important;
+  font-family:'Inter',system-ui,sans-serif!important;
+  font-size:11.5px!important; font-weight:750!important;
+  line-height:1.25!important; opacity:1!important;
+}
+.nav-col .history-slot > summary *{
+  color:#2B2420!important; opacity:1!important;
+}
+.nav-col .history-file{
+  display:block!important; visibility:visible!important;
+  margin:7px 8px 3px!important; padding:7px 9px!important;
+  color:#2B2420!important; background:#FFF8F1!important;
+  border:1px solid #DCCABB!important; border-radius:8px!important;
+  font-size:11px!important; font-weight:650!important; line-height:1.4!important;
+}
+.nav-col .history-file p{margin:0!important; color:#2B2420!important}
+.nav-col .history-file strong{color:#1F1915!important; font-weight:800!important}
+.nav-col .history-text{margin:4px 8px 0!important}
+.nav-col .history-text label{color:#5C5047!important; font-size:10px!important; font-weight:700!important}
+.nav-col .history-text textarea{
+  color:#2B2420!important; background:#FFFDF9!important;
+  border:1px solid #E0D4C7!important; font-size:10.5px!important;
+}
+.nav-col .history-audio{opacity:1!important}
+.nav-col .history-download{opacity:1!important}
