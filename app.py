@@ -134,9 +134,7 @@ def set_clone_preset(name):
 
 
 def _history_updates(history):
-    # History uses ordinary Groups instead of Accordion so the browser receives
-    # deterministic, always-rendered child components. This avoids the blank
-    # container seen when nested Accordion content is lazily mounted.
+    """Render a compact history list: filename dropdown + always-visible download."""
     history = list(history or [])[:HISTORY_LIMIT]
     updates = []
     for index in range(HISTORY_LIMIT):
@@ -147,24 +145,28 @@ def _history_updates(history):
             duration = item.get("duration", "")
             path = item.get("audio_path")
             filename = Path(path).name if path else "Audio belum tersedia"
-            display_filename = filename if len(filename) <= 42 else filename[:39] + "…"
-            meta = f"{index + 1:02d}  ·  {mode}  ·  {duration}  ·  {stamp}"
+            # Keep the closed dropdown title short; full details live inside.
+            display_filename = filename if len(filename) <= 32 else filename[:29] + "…"
+            title = f"{index + 1:02d}  ·  {display_filename}"
+            meta = f"{mode}  ·  {duration}  ·  {stamp}"
             updates.extend([
-                gr.update(visible=True),
-                gr.update(value=meta),
-                gr.update(value=f"**{filename}**"),
+                gr.update(visible=True),                       # row
+                gr.update(label=title, open=False, visible=True), # accordion
+                gr.update(value=meta),                          # meta
+                gr.update(value=f"**{filename}**"),             # full filename
                 gr.update(value=item.get("text", "")),
                 gr.update(value=path, visible=True),
-                gr.update(value=path, interactive=bool(path)),
+                gr.update(value=path, interactive=bool(path), visible=True),
             ])
         else:
             updates.extend([
                 gr.update(visible=False),
+                gr.update(label=f"{index + 1:02d}  ·  Belum ada hasil", open=False, visible=True),
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=""),
                 gr.update(value=None, visible=False),
-                gr.update(value=None, interactive=False),
+                gr.update(value=None, interactive=False, visible=True),
             ])
     return updates
 
@@ -310,7 +312,8 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
 
     with gr.Row(elem_classes=["app-shell"]):
         with gr.Column(scale=0, min_width=255, elem_classes=["nav-col"]):
-            gr.HTML("""<div class='brand'><div class='brand-mark'>C</div><div class='brand-copy'><div class='brand-name'>Cangkeman</div><div class='brand-author'>by Rifky Wijayanto</div><div class='brand-tag'>AI Voice Studio</div></div></div>""")
+
+            gr.HTML("""<div class='brand'><div class='brand-copy'><div class='brand-name'>Cangkeman</div><div class='brand-author'>by Rifky Wijayanto</div><div class='brand-tag'>AI Voice Studio</div></div></div>""")
             gr.Markdown("TOOLS", elem_classes=["nav-caption"])
             mode_nav = gr.Radio(
                 choices=["🎙  Kloning Suara", "🎨  Desain Suara"],
@@ -323,30 +326,32 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
             active_nav_status = gr.Markdown("● Kloning Suara aktif", elem_classes=["mode-status"])
             gr.Markdown("RIWAYAT GENERASI", elem_classes=["nav-caption", "history-heading"])
             history_hint = gr.Markdown("Belum ada hasil · Generate Speech untuk membuat audio.", elem_classes=["history-hint"])
-            history_slots = []
+            history_rows = []
             history_outputs = []
             for i in range(HISTORY_LIMIT):
-                with gr.Group(
-                    visible=False,
-                    elem_classes=["history-slot"]
-                ) as history_group:
-                    history_meta = gr.Markdown("", elem_classes=["history-meta"])
-                    history_file = gr.Markdown("", elem_classes=["history-file"])
-                    history_text = gr.Textbox(
-                        label="Teks yang digenerate", lines=3, interactive=False,
-                        buttons=["copy"], elem_classes=["history-text"]
-                    )
-                    history_audio = gr.Audio(
-                        value=None, label="Preview audio", show_label=True,
-                        interactive=False, visible=False,
-                        autoplay=False, elem_classes=["history-audio"]
-                    )
+                with gr.Row(visible=False, elem_classes=["history-row"]) as history_row:
+                    with gr.Accordion(
+                        f"{i + 1:02d}  ·  Belum ada hasil",
+                        open=False, visible=True,
+                        elem_classes=["history-dropdown"]
+                    ) as history_accordion:
+                        history_meta = gr.Markdown("", elem_classes=["history-meta"])
+                        history_file = gr.Markdown("", elem_classes=["history-file"])
+                        history_text = gr.Textbox(
+                            label="Teks yang digenerate", lines=3, interactive=False,
+                            buttons=["copy"], elem_classes=["history-text"]
+                        )
+                        history_audio = gr.Audio(
+                            value=None, label="Preview audio", show_label=True,
+                            interactive=False, visible=False,
+                            autoplay=False, elem_classes=["history-audio"]
+                        )
                     history_download = gr.DownloadButton(
-                        "⬇  Unduh WAV", value=None, interactive=False,
+                        "↓ WAV", value=None, interactive=False, visible=True,
                         elem_classes=["history-download"]
                     )
-                history_slots.append(history_group)
-                history_outputs.extend([history_group, history_meta, history_file, history_text, history_audio, history_download])
+                history_rows.append(history_row)
+                history_outputs.extend([history_row, history_accordion, history_meta, history_file, history_text, history_audio, history_download])
             gr.Markdown("FireRedTTS3 · NVIDIA T4 · AI Voice Studio", elem_classes=["nav-foot"])
 
         with gr.Column(scale=1, elem_classes=["workspace-col"]):
