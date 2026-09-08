@@ -230,7 +230,7 @@ def generate_dispatch(
         pcm = Path(master_path).with_name(Path(master_path).name.replace("_HQ_FLOAT32.wav", "_PCM16.wav"))
         elapsed = time.time() - started
         summary = (
-            f"**{duration:.1f} detik** · {int(sr):,} Hz · **Voice Cloning** · {elapsed:.1f}s\n\n"
+            f"**{duration:.1f} detik** · {int(sr):,} Hz · **Kloning Suara** · {elapsed:.1f}s\n\n"
             f"seed `{int(seed)}` · speed `{float(output_speed):.2f}x` · pitch `{float(pitch_semitones):+.1f}st`"
         )
         return audio_result, summary, target_text.strip(), str(pcm) if pcm.is_file() else str(master_path), duration
@@ -244,7 +244,7 @@ def generate_dispatch(
     pcm = Path(master_path).with_name(Path(master_path).name.replace("_HQ_FLOAT32.wav", "_PCM16.wav"))
     elapsed = time.time() - started
     summary = (
-        f"**{duration:.1f} detik** · {int(sr):,} Hz · **Voice Design** · {elapsed:.1f}s\n\n"
+        f"**{duration:.1f} detik** · {int(sr):,} Hz · **Desain Suara** · {elapsed:.1f}s\n\n"
         f"gaya **{style}** · language **{design_language}** · gender **{gender}** · age **{age}** · "
         f"timbre **{timbre}** · accent **{accent}** · seed `{int(design_seed)}` · "
         f"CFG `{float(design_cfg):.2f}` · steps `{int(design_steps)}`\n\n"
@@ -305,60 +305,60 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
 
     with gr.Row(elem_classes=["app-shell"]):
         with gr.Column(scale=0, min_width=255, elem_classes=["nav-col"]):
-            gr.HTML("""<div class='brand'><div class='brand-mark'>C</div><div><div class='brand-name'>Cangkeman</div><div class='brand-tag'>AI Voice Studio</div></div></div>""")
+            gr.HTML("""<div class='brand'><div class='brand-mark'>C</div><div class='brand-copy'><div class='brand-name'>Cangkeman</div><div class='brand-author'>by Rifky Wijayanto</div><div class='brand-tag'>AI Voice Studio</div></div></div>""")
             gr.Markdown("TOOLS", elem_classes=["nav-caption"])
             mode_nav = gr.Radio(
-                choices=["🎙  Voice Cloning", "🎨  Voice Design"],
-                value="🎙  Voice Cloning",
+                choices=["🎙  Kloning Suara", "🎨  Desain Suara"],
+                value="🎙  Kloning Suara",
                 label=None,
                 show_label=False,
                 container=False,
                 elem_classes=["mode-nav"],
             )
-            active_nav_status = gr.Markdown("● Voice Cloning aktif", elem_classes=["mode-status"])
-            gr.Markdown("HISTORY", elem_classes=["nav-caption", "history-heading"])
+            active_nav_status = gr.Markdown("● Kloning Suara aktif", elem_classes=["mode-status"])
+            gr.Markdown("RIWAYAT GENERASI", elem_classes=["nav-caption", "history-heading"])
             history_hint = gr.Markdown("Belum ada hasil · Generate Speech untuk membuat audio.", elem_classes=["history-hint"])
             history_accordions = []
             history_outputs = []
             for i in range(HISTORY_LIMIT):
                 with gr.Accordion(
-                    f"{i + 1:02d} · Belum ada hasil", open=False, visible=False,
+                    f"{i + 1:02d} · Belum ada hasil", open=True, visible=False,
                     elem_classes=["history-slot"]
                 ) as history_accordion:
                     history_file = gr.Markdown("", elem_classes=["history-file"])
                     history_text = gr.Textbox(
-                        label="Generated text", lines=3, interactive=False,
+                        label="Teks yang digenerate", lines=3, interactive=False,
                         buttons=["copy"], elem_classes=["history-text"]
                     )
                     history_audio = gr.Audio(
-                        value=None, label="Play preview", show_label=True,
+                        value=None, label="Preview audio", show_label=True,
                         interactive=False, visible=False,
                         autoplay=False, elem_classes=["history-audio"]
                     )
                     history_download = gr.DownloadButton(
-                        "⬇  Unduh audio", value=None, interactive=False,
+                        "⬇  Unduh WAV", value=None, interactive=False,
                         elem_classes=["history-download"]
                     )
                 history_accordions.append(history_accordion)
                 history_outputs.extend([history_accordion, history_file, history_text, history_audio, history_download])
-            gr.Markdown("FireRedTTS3 · T4", elem_classes=["nav-foot"])
+            gr.Markdown("FireRedTTS3 · NVIDIA T4 · AI Voice Studio", elem_classes=["nav-foot"])
 
         with gr.Column(scale=1, elem_classes=["workspace-col"]):
-            gr.Markdown("Workspace", elem_classes=["eyebrow"])
+            gr.Markdown("WORKSPACE TEKS", elem_classes=["eyebrow"])
             target_text = gr.Textbox(
-                label="", lines=9, max_lines=14,
+                label="Teks yang akan dibacakan", lines=9, max_lines=14,
                 placeholder="Tulis teks yang ingin diucapkan…",
                 elem_classes=["main-text"]
             )
-            gr.Markdown("**Preset Teks**", elem_classes=["preset-heading"])
+            gr.Markdown("**Preset Teks · isi naskah**", elem_classes=["preset-heading"])
             with gr.Row(elem_classes=["preset-grid"]):
                 narration_buttons = [gr.Button(name, elem_classes=["narration-preset-btn"]) for name in NARRATION_PRESETS]
             char_counter = gr.Markdown(f"Maksimal {MAX_TARGET_CHARS} karakter.", elem_classes=["field-hint", "char-counter"])
             generate_btn = gr.Button("Generate Speech", variant="primary", elem_classes=["generate-btn"])
 
-            gr.Markdown("Output", elem_classes=["eyebrow", "output-heading"])
+            gr.Markdown("HASIL GENERASI", elem_classes=["eyebrow", "output-heading"])
             with gr.Column(elem_id="output-stage", elem_classes=["output-stage"]):
-                output_status = gr.Markdown("Ready · belum ada output", elem_classes=["output-status"])
+                output_status = gr.Markdown("Siap · belum ada audio", elem_classes=["output-status"])
                 with gr.Column(elem_classes=["output-media-card"]):
                     generated_audio = gr.Audio(
                         value=None, label="", show_label=False, autoplay=False,
@@ -378,26 +378,26 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
             )
 
         with gr.Column(scale=0, min_width=330, elem_classes=["settings-col"]):
-            active_title = gr.Markdown("🎙 **Voice Cloning**", elem_classes=["settings-mode-title"])
-            settings_sync = gr.Markdown("● Voice Cloning aktif", elem_classes=["settings-mode-status"])
+            active_title = gr.Markdown("🎙 **Kloning Suara**", elem_classes=["settings-mode-title"])
+            settings_sync = gr.Markdown("● Kloning Suara aktif", elem_classes=["settings-mode-status"])
 
             with gr.Column(visible=True, elem_classes=["settings-panel"]) as clone_panel:
-                gr.Markdown("### Voice Cloning")
+                gr.Markdown("### Sumber & Kontrol Cloning")
                 reference_audio = gr.Audio(
                     sources=["upload", "microphone"], type="filepath",
-                    label=f"Reference Audio · {MIN_PROMPT_SECONDS:.0f}–{MAX_PROMPT_SECONDS:.0f} detik"
+                    label=f"Audio Referensi · {MIN_PROMPT_SECONDS:.0f}–{MAX_PROMPT_SECONDS:.0f} detik"
                 )
                 reference_transcript = gr.Textbox(
-                    label="Reference Transcript", lines=4,
+                    label="Transkrip Audio Referensi", lines=4,
                     placeholder="Tulis persis ucapan pada audio referensi…"
                 )
                 ref_status = gr.Markdown("Upload audio referensi untuk mulai cloning.", elem_classes=["field-hint"])
-                language = gr.Dropdown(choices=LANGUAGE_CHOICES, value="Indonesian", label="Language")
-                gr.Markdown("### Fine Control")
+                language = gr.Dropdown(choices=LANGUAGE_CHOICES, value="Indonesian", label="Bahasa")
+                gr.Markdown("### Kontrol Hasil")
                 with gr.Row():
-                    output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Speed")
-                    pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Pitch")
-                gr.Markdown("### Presets")
+                    output_speed = gr.Slider(minimum=MIN_OUTPUT_SPEED, maximum=MAX_OUTPUT_SPEED, value=1.0, step=0.01, label="Kecepatan")
+                    pitch_semitones = gr.Slider(minimum=MIN_PITCH_SEMITONES, maximum=MAX_PITCH_SEMITONES, value=0.0, step=0.5, label="Pitch (semitone)")
+                gr.Markdown("### Preset Cepat")
                 with gr.Row():
                     preset_nat = gr.Button("Alami", elem_classes=["small-btn"])
                     preset_deep = gr.Button("Tenang", elem_classes=["small-btn"])
@@ -407,34 +407,34 @@ with gr.Blocks(title="Cangkeman — AI Voice Studio") as demo:
                 with gr.Row():
                     random_seed_btn = gr.Button("Random Seed", elem_classes=["small-btn"])
                     reset_btn = gr.Button("Reset controls", elem_classes=["text-btn"])
-                seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed")
+                seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Acak")
 
             with gr.Column(visible=False, elem_classes=["settings-panel"]) as design_panel:
-                gr.Markdown("### Voice Design")
-                gr.Markdown("**Preset Person**", elem_classes=["preset-heading"])
+                gr.Markdown("### Karakter Suara")
+                gr.Markdown("**Preset Person · identitas suara**", elem_classes=["preset-heading"])
                 with gr.Row(elem_classes=["person-grid"]):
                     person_buttons = [gr.Button(name, elem_classes=["person-preset-btn"]) for name in PERSON_PRESETS]
-                gender = gr.Dropdown(choices=["Auto","Male","Female"], value="Auto", label="Gender")
-                age = gr.Dropdown(choices=["Auto","Young Adult","Adult","Mature","Senior"], value="Auto", label="Age")
-                timbre = gr.Dropdown(choices=["Natural","Warm","Bright","Deep","Soft","Crisp","Breathy","Rich"], value="Natural", label="Timbre")
-                design_language = gr.Dropdown(choices=LANGUAGE_CHOICES, value="Indonesian", label="Language")
-                accent = gr.Dropdown(choices=["Auto","Indonesian","American English","British English","International English"], value="Indonesian", label="Accent")
-                style = gr.Dropdown(choices=STYLE_CHOICES, value="Natural", label="Gaya Suara", info="Gaya mencakup cara bicara, ekspresi, energi, dan ritme.")
-                custom_instruction = gr.Textbox(label="Custom Style", lines=4, max_lines=7, placeholder="Contoh: warm, relaxed, like a late-night podcast host with natural pauses…")
-                gr.Markdown("### Advanced")
-                design_cfg = gr.Slider(minimum=MIN_DESIGN_CFG, maximum=MAX_DESIGN_CFG, value=DEFAULT_DESIGN_CFG, step=0.1, label="CFG")
-                design_steps = gr.Slider(minimum=MIN_DESIGN_STEPS, maximum=MAX_DESIGN_STEPS, value=DEFAULT_DESIGN_STEPS, step=1, label="Steps")
+                gender = gr.Dropdown(choices=["Auto","Male","Female"], value="Auto", label="Gender / Suara")
+                age = gr.Dropdown(choices=["Auto","Young Adult","Adult","Mature","Senior"], value="Auto", label="Usia")
+                timbre = gr.Dropdown(choices=["Natural","Warm","Bright","Deep","Soft","Crisp","Breathy","Rich"], value="Natural", label="Timbre / Warna Suara")
+                design_language = gr.Dropdown(choices=LANGUAGE_CHOICES, value="Indonesian", label="Bahasa")
+                accent = gr.Dropdown(choices=["Auto","Indonesian","American English","British English","International English"], value="Indonesian", label="Aksen")
+                style = gr.Dropdown(choices=STYLE_CHOICES, value="Natural", label="Gaya Penyampaian", info="Gaya mencakup cara bicara, ekspresi, energi, dan ritme.")
+                custom_instruction = gr.Textbox(label="Instruksi Gaya Tambahan", lines=4, max_lines=7, placeholder="Contoh: hangat, santai, seperti host podcast malam dengan jeda alami…")
+                gr.Markdown("### Pengaturan Generasi")
+                design_cfg = gr.Slider(minimum=MIN_DESIGN_CFG, maximum=MAX_DESIGN_CFG, value=DEFAULT_DESIGN_CFG, step=0.1, label="CFG · kekuatan instruksi")
+                design_steps = gr.Slider(minimum=MIN_DESIGN_STEPS, maximum=MAX_DESIGN_STEPS, value=DEFAULT_DESIGN_STEPS, step=1, label="Steps · detail generasi")
                 with gr.Row():
                     design_random_seed_btn = gr.Button("Random Seed", elem_classes=["small-btn"])
                     design_reset_btn = gr.Button("Reset Design", elem_classes=["text-btn"])
-                design_seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed")
-                gr.Markdown("FireRedTTS3-Instruct membuat voice baru dari deskripsi, tanpa reference audio.", elem_classes=["field-hint"])
+                design_seed = gr.Number(value=DEFAULT_SEED, precision=0, label="Seed Acak")
+                gr.Markdown("Voice Design membuat karakter suara baru dari deskripsi, tanpa audio referensi.", elem_classes=["field-hint"])
 
     def _nav_changed(label):
         mode = "cloning" if (label or "").startswith("🎙") else "design"
         is_clone = mode == "cloning"
-        title = "🎙 **Voice Cloning**" if is_clone else "🎨 **Voice Design**"
-        status = "● Voice Cloning aktif" if is_clone else "● Voice Design aktif"
+        title = "🎙 **Kloning Suara**" if is_clone else "🎨 **Desain Suara**"
+        status = "● Kloning Suara aktif" if is_clone else "● Desain Suara aktif"
         return (
             mode,
             gr.update(visible=is_clone),
