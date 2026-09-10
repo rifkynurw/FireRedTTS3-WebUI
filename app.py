@@ -136,26 +136,40 @@ def set_clone_preset(name):
 
 
 def _history_updates(history):
-    """Render a compact activity-feed history with hover-to-copy text popovers."""
+    """Render compact dropdown history entries with all file actions inside."""
     history = list(history or [])[:HISTORY_LIMIT]
     updates = []
     for index in range(HISTORY_LIMIT):
         if index < len(history):
             item = history[index]
             path = item.get("audio_path")
+            filename = Path(path).name if path else "Audio belum tersedia"
+            text = str(item.get("text", "") or "").strip() or "(Teks kosong)"
+            preview = re.sub(r"\s+", " ", text)
+            if len(preview) > 58:
+                preview = preview[:55].rstrip() + "…"
+            mode = str(item.get("mode", "Voice") or "Voice")
+            stamp = str(item.get("time", "") or "")
+            duration = str(item.get("duration", "") or "")
+            title = f"{index + 1:02d}  ·  {preview}"
+            meta = " · ".join(x for x in (mode, duration, stamp) if x)
             updates.extend([
                 gr.update(visible=True),
-                gr.update(value=_history_preview_html(item)),
-                gr.update(value=item.get("text", ""), visible=True),
-                gr.update(value=path, visible=True),
+                gr.update(label=title, open=False, visible=True),
+                gr.update(value=meta),
+                gr.update(value=f"**{html.escape(filename)}**", visible=True),
+                gr.update(value=text, visible=True),
+                gr.update(value=path, visible=bool(path)),
                 gr.update(value=path, interactive=bool(path), visible=True),
             ])
         else:
             updates.extend([
                 gr.update(visible=False),
+                gr.update(label=f"{index + 1:02d}  ·  Belum ada hasil", open=False, visible=True),
                 gr.update(value=""),
-                gr.update(value=None, visible=True),
-                gr.update(value=None, visible=True),
+                gr.update(value="", visible=True),
+                gr.update(value="", visible=True),
+                gr.update(value=None, visible=False),
                 gr.update(value=None, interactive=False, visible=True),
             ])
     return updates
@@ -180,26 +194,6 @@ def _history_hint(history):
     label = "hasil terbaru" if count != 1 else "hasil terbaru"
     return f"{count} {label} · arahkan kursor ke teks untuk Copy."
 
-
-def _history_preview_html(item):
-    """Build a safe, compact activity-feed preview for the sidebar history."""
-    text = str(item.get("text", "") or "").strip() or "(Teks kosong)"
-    safe = html.escape(re.sub(r"\s+", " ", text))
-    mode = html.escape(str(item.get("mode", "Voice") or "Voice"))
-    duration = html.escape(str(item.get("duration", "") or ""))
-    stamp = html.escape(str(item.get("time", "") or ""))
-    meta = " · ".join(x for x in ("CocotBot", mode, duration, stamp) if x)
-    return (
-        "<div class='history-feed-card'>"
-        "<div class='history-feed-text' title='Hover untuk melihat dan menyalin teks lengkap'>"
-        f"{safe}"
-        "</div>"
-        "<div class='history-feed-meta'>"
-        "<span class='history-feed-avatar' aria-hidden='true'></span>"
-        f"<span>{html.escape(meta)}</span>"
-        "</div>"
-        "</div>"
-    )
 
 
 def _reset_history_ui():
@@ -341,24 +335,31 @@ with gr.Blocks(title="CocotBot — AI Voice Studio") as demo:
             history_outputs = []
             for i in range(HISTORY_LIMIT):
                 with gr.Row(visible=False, elem_classes=["history-row"]) as history_row:
-                    with gr.Column(elem_classes=["history-item"]):
-                        history_preview = gr.HTML("", elem_classes=["history-preview"])
-                        with gr.Column(elem_classes=["history-hover-panel"]):
-                            history_text = gr.Textbox(
-                                label="Teks yang digenerate", lines=5, interactive=False,
-                                buttons=["copy"], elem_classes=["history-hover-copy"]
-                            )
-                            history_audio = gr.Audio(
-                                value=None, label="Preview audio", show_label=False,
-                                interactive=False, visible=True,
-                                autoplay=False, elem_classes=["history-audio"]
-                            )
-                    history_download = gr.DownloadButton(
-                        "WAV", value=None, interactive=False, visible=True,
-                        elem_classes=["history-download"]
-                    )
+                    with gr.Accordion(
+                        f"{i + 1:02d}  ·  Belum ada hasil",
+                        open=False, visible=True,
+                        elem_classes=["history-dropdown"]
+                    ) as history_accordion:
+                        history_meta = gr.Markdown("", elem_classes=["history-meta"])
+                        history_file = gr.Markdown("", elem_classes=["history-file"])
+                        history_text = gr.Textbox(
+                            label="Teks yang digenerate", lines=4, interactive=False,
+                            buttons=["copy"], elem_classes=["history-text"]
+                        )
+                        history_audio = gr.Audio(
+                            value=None, label="Preview audio", show_label=True,
+                            interactive=False, visible=False,
+                            autoplay=False, elem_classes=["history-audio"]
+                        )
+                        history_download = gr.DownloadButton(
+                            "↓ Unduh WAV", value=None, interactive=False, visible=True,
+                            elem_classes=["history-download"]
+                        )
                 history_rows.append(history_row)
-                history_outputs.extend([history_row, history_preview, history_text, history_audio, history_download])
+                history_outputs.extend([
+                    history_row, history_accordion, history_meta, history_file,
+                    history_text, history_audio, history_download
+                ])
             gr.Markdown("FireRedTTS3 · NVIDIA T4", elem_classes=["nav-foot"])
 
         with gr.Column(scale=1, elem_classes=["workspace-col"]):
