@@ -1142,3 +1142,16 @@ Patch ini tidak mengubah pipeline inference/model. Perubahannya berada pada pres
 - History sekarang menampilkan **nama file audio secara eksplisit** di dalam kartu, dengan kontras tinggi dan `overflow-wrap` agar nama panjang tetap terbaca.
 - Urutan setiap item History tetap: filename → Generated text (Copy) → Play preview → Unduh audio.
 - Source canonical `app.py` dan `theme.css` di notebook disinkronkan kembali ke file final.
+
+
+## Patch28.16k — CocotBot Sidebar & Hover-to-Copy History
+
+Perubahan ini hanya menyempurnakan presentasi WebUI; pipeline inference FireRedTTS3 tidak diubah.
+
+- Branding sidebar kiri diganti menjadi **CocotBot** dengan keterangan **by Rifky Wijayanto**.
+- Bagian **TOOLS** dibuat menjadi navigasi vertikal bergaya activity/navigation feed yang lebih dekat dengan referensi ElevenLabs.
+- History sidebar diubah dari accordion menjadi feed ringkas dengan preview teks, metadata, avatar kecil, dan tombol WAV yang tetap tersedia.
+- Saat pointer diarahkan ke preview teks History, muncul popup native Gradio `Textbox` dengan tombol **Copy**; teks lengkap di-escape sebelum dirender sebagai HTML.
+- Preview audio tetap dipertahankan sebagai komponen di dalam popup sehingga fungsi Play tidak hilang.
+- Source canonical `app.py` dan `theme.css` di notebook disinkronkan kembali sehingga materialisasi berikutnya menghasilkan UI yang sama.
+- Tidak ada perubahan terhadap model, precision path, Base/Instruct switching, atau parameter generasi.
