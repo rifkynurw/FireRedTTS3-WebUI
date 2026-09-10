@@ -542,7 +542,7 @@ demo.queue(max_size=2, default_concurrency_limit=1)
 launch_result = demo.launch(
     server_name="0.0.0.0", server_port=PORT, share=True, show_error=True,
     prevent_thread_lock=True, allowed_paths=[str(OUTPUT_DIR)], css=css,
-    theme=gr.themes.Soft()
+    theme=gr.themes.Soft(),
 )
 try:
     _, local_url, share_url = launch_result

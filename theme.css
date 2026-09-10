@@ -984,3 +984,124 @@ body, .gradio-container, textarea, input, button, select{
   .nav-col .brand-name{font-size:28px!important}
   .nav-col .history-hover-panel{left:8px!important;right:8px!important}
 }
+
+
+/* CocotBot Light Theme — explicit light-mode override */
+html,
+html.dark,
+body,
+body.dark,
+.gradio-container,
+.gradio-container.dark,
+[data-theme="dark"],
+.dark {
+  color-scheme: light !important;
+  --body-background-fill: #FFFFFF !important;
+  --background-fill-primary: #FFFFFF !important;
+  --background-fill-secondary: #F7F7F5 !important;
+  --block-background-fill: #FFFFFF !important;
+  --block-border-color: #E5E3DF !important;
+  --border-color-primary: #E5E3DF !important;
+  --input-background-fill: #F8F8F6 !important;
+  --body-text-color: #242220 !important;
+  --body-text-color-subdued: #6D6964 !important;
+}
+
+html,
+html.dark,
+body,
+body.dark,
+.gradio-container,
+.gradio-container.dark,
+[data-theme="dark"] .gradio-container,
+.dark .gradio-container {
+  background: #FFFFFF !important;
+  color: #242220 !important;
+}
+
+/* Keep every primary surface visibly white in case Gradio applies dark-mode classes. */
+.gradio-container .block,
+.gradio-container .form,
+.gradio-container .panel,
+.gradio-container .box,
+.gradio-container .contain,
+.gradio-container .wrap,
+.gradio-container .tabitem,
+.gradio-container .accordion,
+.gradio-container [class*="panel"],
+.gradio-container [class*="block"] {
+  color-scheme: light !important;
+}
+
+.gradio-container input,
+.gradio-container textarea,
+.gradio-container select,
+.gradio-container button,
+.gradio-container [role="button"],
+.gradio-container [role="combobox"],
+.gradio-container .gr-dropdown,
+.gradio-container .gradio-dropdown,
+.gradio-container .gradio-textbox,
+.gradio-container .gradio-number,
+.gradio-container .gradio-slider,
+.gradio-container .gradio-audio,
+.gradio-container .gradio-video {
+  color-scheme: light !important;
+}
+
+.gradio-container input,
+.gradio-container textarea,
+.gradio-container select {
+  background: #F8F8F6 !important;
+  color: #242220 !important;
+  border-color: #E3E0DA !important;
+}
+
+.gradio-container input::placeholder,
+.gradio-container textarea::placeholder {
+  color: #9A958E !important;
+  opacity: 1 !important;
+}
+
+/* Sidebar and history stay bright, matching the reference direction. */
+.nav-col {
+  background: #FFFFFF !important;
+  border-color: #E5E3DF !important;
+}
+
+.nav-col .history-row,
+.nav-col .history-dropdown,
+.nav-col .history-hover-panel,
+.nav-col .history-hover-copy,
+.nav-col .history-preview {
+  color-scheme: light !important;
+}
+
+.nav-col .history-dropdown,
+.nav-col .history-hover-panel {
+  background: #FFFFFF !important;
+  border-color: #E3E0DA !important;
+}
+
+.nav-col .history-dropdown > summary,
+.nav-col .history-preview {
+  background: #F7F7F5 !important;
+  color: #242220 !important;
+}
+
+.nav-col .history-hover-panel {
+  box-shadow: 0 14px 34px rgba(30, 27, 23, .14) !important;
+}
+
+.settings-col,
+.output-media-card,
+.summary-box {
+  background: #FFFFFF !important;
+  border-color: #E5E3DF !important;
+}
+
+/* Never allow an OS/browser dark preference to tint native controls. */
+.gradio-container,
+.gradio-container * {
+  color-scheme: light;
+}
