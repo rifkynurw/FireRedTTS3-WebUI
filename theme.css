@@ -343,6 +343,211 @@ input[type="range"] { accent-color: var(--signal); }
 }
 
 /* =========================================================================
+   APP SHELL — sidebar navigasi + area konten
+   ========================================================================= */
+
+.app-shell { gap: 20px !important; align-items: flex-start !important; }
+
+.app-sidebar {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 18px 14px !important;
+  align-self: flex-start;
+  position: sticky;
+  top: 18px;
+}
+
+.sidebar-brand { padding: 4px 6px 18px; }
+
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.brand-name span {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: .7rem;
+  color: var(--muted);
+}
+
+.nav-item {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: 3px solid transparent !important;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0 !important;
+  color: var(--muted) !important;
+  font-weight: 500 !important;
+  font-size: .88rem !important;
+  padding: 10px 12px !important;
+  margin-bottom: 2px !important;
+  box-shadow: none !important;
+}
+
+.nav-item:hover { background: var(--paper) !important; color: var(--ink) !important; }
+
+.nav-item.active {
+  background: var(--signal-soft) !important;
+  border-left-color: var(--signal) !important;
+  color: var(--signal-deep) !important;
+  font-weight: 600 !important;
+}
+
+.sidebar-footnote {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  padding: 16px 12px 4px;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+}
+
+.app-main-col { min-width: 0 !important; }
+
+.topbar {
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 2px 16px !important;
+}
+
+.topbar-title h3 {
+  font-family: var(--font-display) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  margin: 0 !important;
+}
+
+/* Sembunyikan nav-tab bawaan Gradio di level halaman — navigasi memakai sidebar */
+#page-tabs > .tab-nav { display: none !important; }
+#page-tabs { border: none !important; background: transparent !important; }
+
+/* =========================================================================
+   HALAMAN TEXT TO SPEECH
+   ========================================================================= */
+
+.main-textbox textarea {
+  min-height: 190px !important;
+  font-size: 1rem !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+}
+
+.quickstart-label { color: var(--muted) !important; font-size: .82rem !important; margin: 14px 0 8px !important; }
+
+.chip-row { flex-wrap: wrap !important; gap: 8px !important; }
+
+.chip-btn {
+  background: var(--panel) !important;
+  border: 1px solid var(--line) !important;
+  color: var(--ink) !important;
+  font-size: .82rem !important;
+  font-weight: 500 !important;
+  border-radius: 999px !important;
+  padding: 7px 14px !important;
+  width: auto !important;
+  box-shadow: none !important;
+}
+
+.chip-btn:hover { border-color: var(--signal) !important; color: var(--signal-deep) !important; }
+
+.custom-ref-group { margin-top: 14px !important; }
+
+.generate-bar { margin: 16px 0 !important; justify-content: flex-end !important; }
+
+.btn-generate { font-size: .95rem !important; padding: 12px 26px !important; }
+
+/* --- Panel kanan (pengaturan) --- */
+
+.app-rightpanel .custom-card { box-shadow: none !important; }
+
+.field-label {
+  font-size: .82rem !important;
+  font-weight: 600 !important;
+  color: var(--ink) !important;
+  margin: 14px 0 6px !important;
+}
+.field-label:first-child { margin-top: 0 !important; }
+
+.range-caption {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  margin: -6px 0 10px;
+}
+
+/* --- Riwayat --- */
+
+.history-empty {
+  color: var(--muted);
+  font-size: .85rem;
+  padding: 20px 4px;
+  text-align: center;
+}
+
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+
+.history-item {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.history-item-text { font-size: .84rem; color: var(--ink); line-height: 1.4; }
+
+.history-item-meta {
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* =========================================================================
+   HALAMAN VOICES
+   ========================================================================= */
+
+.voice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
+.voice-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.voice-card-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #FBFBFA;
+  flex: none;
+}
+
+.voice-card-avatar.preset { background: linear-gradient(160deg, var(--signal) 0%, var(--signal-deep) 100%); }
+.voice-card-avatar.custom { background: linear-gradient(160deg, var(--amber) 0%, #9C6110 100%); }
+
+.voice-card-name { font-size: .88rem; font-weight: 600; color: var(--ink); }
+.voice-card-tag { font-size: .74rem; color: var(--muted); margin-top: 2px; }
+
+/* =========================================================================
    AKSESIBILITAS & RESPONSIVE
    ========================================================================= */
 
@@ -355,4 +560,7 @@ input[type="range"] { accent-color: var(--signal); }
   .main-header { padding: 20px 18px 18px; }
   .main-header h1 { font-size: 1.4rem !important; }
   .tabs > .tab-nav { flex-wrap: wrap; }
+  .app-shell { flex-direction: column !important; }
+  .app-sidebar { position: static; width: 100% !important; }
+  .nav-item { border-left: none !important; border-radius: var(--radius-sm) !important; }
 }
